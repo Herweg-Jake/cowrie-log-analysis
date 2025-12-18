@@ -19,3 +19,8 @@ htmlcov/
 
 # OS
 .DS_Store
+
+# env files
+.env
+src/.env
+**/.env
