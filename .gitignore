@@ -24,3 +24,8 @@ htmlcov/
 .env
 src/.env
 **/.env
+
+# env files
+.env
+src/.env
+**/.env
