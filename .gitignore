@@ -1,0 +1,21 @@
+# venvs
+venv/
+.venv/
+env/
+
+# python cache
+__pycache__/
+*.py[cod]
+
+# tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# notebooks
+.ipynb_checkpoints/
+
+# OS
+.DS_Store

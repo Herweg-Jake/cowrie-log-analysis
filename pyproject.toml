@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cowrie-dataset"
+version = "0.1.0"
+description = "Cowrie honeypot log analysis and ML dataset generation"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Jake", email = "jake@example.com"}
+]
+
+dependencies = [
+    "elasticsearch>=8.0.0",
+    "python-dotenv>=1.0.0",
+    "geoip2>=4.0.0",
+    "tqdm>=4.0.0",
+    "pandas>=2.0.0",
+    "pyarrow>=14.0.0",  # for parquet export
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "ipython>=8.0.0",
+    "jupyter>=1.0.0",
+]
+ml = [
+    "lightgbm>=4.0.0",
+    "scikit-learn>=1.3.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+]
+
+[project.scripts]
+cowrie-ingest = "cowrie_dataset.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
