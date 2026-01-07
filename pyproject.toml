@@ -35,6 +35,10 @@ ml = [
     "matplotlib>=3.7.0",
     "seaborn>=0.12.0",
 ]
+agents = [
+    "anthropic>=0.18.0",
+    "openai>=1.12.0",
+]
 
 [project.scripts]
 cowrie-ingest = "cowrie_dataset.cli:main"
