@@ -1,12 +1,12 @@
 """
-Statistical Anomaly Detection Module.
+Statistical anomaly detection for pre-filtering sessions.
 
-Uses Z-scores to identify sessions that deviate significantly from the norm.
-This pre-filters sessions before sending to expensive LLM agents.
+Flags sessions that deviate from "normal" so we only send weird ones
+to the expensive LLM agents.
 """
 
 from .statistical_detector import (
-    AnomalyStats,
+    FeatureStats,
     AnomalyResult,
     StatisticalAnomalyDetector,
     add_anomaly_flag,
@@ -14,7 +14,7 @@ from .statistical_detector import (
 )
 
 __all__ = [
-    "AnomalyStats",
+    "FeatureStats",
     "AnomalyResult",
     "StatisticalAnomalyDetector",
     "add_anomaly_flag",
