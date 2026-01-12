@@ -119,13 +119,77 @@ SESSION_INDEX_MAPPING = {
                 "enabled": True,
             },
             
-            "labels": {
+            # Statistical Anomaly Detection
+            "statistical_anomaly": {
+                "type": "object",
+                "properties": {
+                    "is_anomaly": {"type": "boolean"},
+                    "score": {"type": "float"},
+                    "reasons": {"type": "keyword"},
+                    "z_scores": {
+                        "type": "object",
+                        "dynamic": True
+                    }
+                }
+            },
+            
+            # Pipeline A Output - Rule Based
+            "labels_rule_based": {
                 "properties": {
                     "level": {"type": "integer"},
                     "primary_tactic": {"type": "keyword"},
                     "all_tactics": {"type": "keyword"},
                     "matched_patterns": {"type": "keyword"},
                     "session_type": {"type": "keyword"},
+                }
+            },
+            
+            # Pipeline B Output - Agentic
+            "labels_agentic": {
+                "type": "object",
+                "properties": {
+                    "skipped": {"type": "boolean"},
+                    "was_anomaly": {"type": "boolean"},
+                    "hunter_verdict": {"type": "keyword"},
+                    "hunter_confidence": {"type": "float"},
+                    "hunter_reasoning": {"type": "text"},
+                    "analyst_verdict": {
+                        "type": "object",
+                        "properties": {
+                            "level": {"type": "integer"},
+                            "primary_tactic": {"type": "keyword"},
+                            "all_tactics": {"type": "keyword"},
+                            "technique_ids": {"type": "keyword"},
+                            "sophistication": {"type": "keyword"},
+                            "intent": {"type": "text"},
+                            "reasoning": {"type": "text"},
+                            "confidence": {"type": "float"},
+                            "iocs": {"type": "keyword"}
+                        }
+                    },
+                    "pipeline_metrics": {
+                        "type": "object",
+                        "properties": {
+                            "sent_to_hunter": {"type": "boolean"},
+                            "sent_to_analyst": {"type": "boolean"},
+                            "total_latency_ms": {"type": "integer"},
+                            "total_cost_usd": {"type": "float"}
+                        }
+                    },
+                    "error": {"type": "text"},
+                    "stage": {"type": "keyword"}
+                }
+            },
+            
+            # Comparison Flags (computed during indexing)
+            "label_comparison": {
+                "type": "object",
+                "properties": {
+                    "tactics_agree": {"type": "boolean"},
+                    "levels_agree": {"type": "boolean"},
+                    "rule_level": {"type": "integer"},
+                    "agent_level": {"type": "integer"},
+                    "level_difference": {"type": "integer"}
                 }
             },
             

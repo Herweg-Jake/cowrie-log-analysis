@@ -28,6 +28,7 @@ from .aggregators import SessionAggregator
 from .features import extract_message_features, extract_host_features, extract_geo_features, GeoEnricher
 from .labeling import MitreLabeler
 from .sinks.elasticsearch_sink import ElasticsearchSink, DryRunSink
+from .export.session_exporter import export_sessions_to_jsonl, export_session
 
 
 def setup_logging(verbose: bool = False):
@@ -144,10 +145,10 @@ def build_session_document(
         "accuracy_radius": geo_features.get("extra_accuracy_radius", 0),
     }
     
-    # Apply labels
+    # Apply labels (Pipeline A - rule-based)
     label = labeler.label(session)
-    doc["labels"] = label.to_dict()
-    doc["labels"]["session_type"] = session.get_session_type()
+    doc["labels_rule_based"] = label.to_dict()
+    doc["labels_rule_based"]["session_type"] = session.get_session_type()
     
     return doc
 
@@ -202,6 +203,10 @@ def main():
         help="Honeypot data directory (overrides .env)",
     )
     parser.add_argument(
+        "--export", "-e",
+        help="Export sessions to JSONL file instead of Elasticsearch (path to output file)",
+    )
+    parser.add_argument(
         "--verbose", "-v",
         action="store_true",
         help="Enable debug logging",
@@ -244,6 +249,59 @@ def main():
             logger.warning(f"Failed to load GeoLite2: {e}")
     else:
         logger.info("Geo enrichment disabled (no GeoLite2 database)")
+    
+    # Check if we're exporting to JSONL instead of Elasticsearch
+    if args.export:
+        logger.info(f"EXPORT MODE - writing to {args.export}")
+        export_path = Path(args.export)
+        
+        # Collect all sessions
+        labeler = MitreLabeler()
+        all_sessions = []
+        
+        start_time = datetime.now()
+        
+        for location in locations:
+            location_path = settings.get_location_path(location)
+            logger.info(f"Processing location: {location} from {location_path}")
+            
+            if not location_path.exists():
+                logger.error(f"Location path does not exist: {location_path}")
+                continue
+            
+            parser = CowrieParser()
+            aggregator = SessionAggregator(location=location)
+            
+            for event in parser.parse_directory(location_path, limit=args.limit, sort_by_date=True):
+                completed_sessions = aggregator.add_event(event)
+                all_sessions.extend(completed_sessions)
+            
+            # Flush remaining sessions
+            all_sessions.extend(aggregator.flush())
+            
+            logger.info(f"Collected {len(all_sessions)} sessions from {location}")
+        
+        # Export to JSONL
+        logger.info(f"Exporting {len(all_sessions)} sessions to {export_path}...")
+        count = export_sessions_to_jsonl(
+            iter(all_sessions),
+            export_path,
+            geo_enricher,
+            progress_callback=lambda n: logger.info(f"Exported {n} sessions...")
+        )
+        
+        if geo_enricher:
+            geo_enricher.close()
+        
+        elapsed = datetime.now() - start_time
+        logger.info(f"\n{'='*60}")
+        logger.info("EXPORT COMPLETE")
+        logger.info(f"{'='*60}")
+        logger.info(f"Time elapsed: {elapsed}")
+        logger.info(f"Sessions exported: {count}")
+        logger.info(f"Output file: {export_path}")
+        logger.info(f"{'='*60}")
+        return
     
     # Initialize sink
     if args.dry_run:
