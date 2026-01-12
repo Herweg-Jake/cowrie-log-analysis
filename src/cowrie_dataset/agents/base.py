@@ -24,7 +24,7 @@ class AgentConfig:
     """
 
     provider: str = "gemini"  # "anthropic", "openai", or "gemini"
-    model: str = "gemini-1.5-flash"
+    model: str = "gemini-2.0-flash"  # 1.5 is deprecated, 2.0 is current
     api_key: Optional[str] = None
 
     # generation params
@@ -54,10 +54,10 @@ class AgentConfig:
 
 # handy presets so you don't have to remember all the params
 def gemini_flash_config(**overrides) -> AgentConfig:
-    """Free tier Gemini - good for testing, strict rate limits."""
+    """Free tier Gemini 2.0 Flash - good for testing, strict rate limits."""
     return AgentConfig(
         provider="gemini",
-        model="gemini-1.5-flash",
+        model="gemini-2.0-flash",
         requests_per_minute=15,  # free tier limit
         input_cost_per_1k=0.0,
         output_cost_per_1k=0.0,
@@ -69,7 +69,7 @@ def gemini_pro_config(**overrides) -> AgentConfig:
     """Gemini Pro - better quality, uses your $300 credits."""
     return AgentConfig(
         provider="gemini",
-        model="gemini-1.5-pro",
+        model="gemini-2.5-pro-preview-05-06",  # latest pro model
         requests_per_minute=60,
         input_cost_per_1k=0.00125,  # $1.25 per 1M
         output_cost_per_1k=0.005,   # $5 per 1M
@@ -153,10 +153,9 @@ class BaseAgent(ABC):
         elif self.config.provider == "openai":
             import openai
             self._client = openai.OpenAI(api_key=self.config.api_key)
-        else:  # gemini
-            import google.generativeai as genai
-            genai.configure(api_key=self.config.api_key)
-            self._client = genai.GenerativeModel(self.config.model)
+        else:  # gemini - using new google-genai SDK
+            from google import genai
+            self._client = genai.Client(api_key=self.config.api_key)
 
         return self._client
 
@@ -212,24 +211,26 @@ class BaseAgent(ABC):
                 response.usage.completion_tokens,
             )
 
-        else:  # gemini
-            # gemini doesn't have system messages, so we prepend it
-            full_prompt = f"{self.system_prompt}\n\n---\n\n{user_prompt}"
+        else:  # gemini - new SDK style
+            from google.genai import types
 
-            response = client.generate_content(
-                full_prompt,
-                generation_config={
-                    "max_output_tokens": self.config.max_tokens,
-                    "temperature": self.config.temperature,
-                },
+            # gemini 2.0 supports system instructions natively
+            response = client.models.generate_content(
+                model=self.config.model,
+                contents=user_prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=self.system_prompt,
+                    max_output_tokens=self.config.max_tokens,
+                    temperature=self.config.temperature,
+                ),
             )
 
-            # gemini's token counting is in usage_metadata
+            # token counts from usage_metadata
             usage = response.usage_metadata
             return (
                 response.text,
-                usage.prompt_token_count,
-                usage.candidates_token_count,
+                usage.prompt_token_count or 0,
+                usage.candidates_token_count or 0,
             )
 
     def analyze(self, session: dict) -> AgentResponse:
