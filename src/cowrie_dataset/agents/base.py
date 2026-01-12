@@ -28,6 +28,10 @@ class AgentConfig:
     model: str = "gemini-2.0-flash"  # 1.5 is deprecated, 2.0 is current
     api_key: Optional[str] = None
 
+    # Vertex AI settings (uses Google Cloud credits instead of free tier)
+    project_id: Optional[str] = None
+    location: str = "us-central1"
+
     # generation params
     max_tokens: int = 1024
     temperature: float = 0.1  # low = consistent, high = creative
@@ -51,6 +55,10 @@ class AgentConfig:
                 self.api_key = os.environ.get("OPENAI_API_KEY")
             else:  # gemini
                 self.api_key = os.environ.get("GOOGLE_API_KEY")
+
+        # Vertex AI project from env (uses Google Cloud credits)
+        if self.project_id is None:
+            self.project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
 
 
 # handy presets so you don't have to remember all the params
@@ -156,7 +164,17 @@ class BaseAgent(ABC):
             self._client = openai.OpenAI(api_key=self.config.api_key)
         else:  # gemini - using new google-genai SDK
             from google import genai
-            self._client = genai.Client(api_key=self.config.api_key)
+
+            if self.config.project_id:
+                # Use Vertex AI (Google Cloud credits)
+                self._client = genai.Client(
+                    vertexai=True,
+                    project=self.config.project_id,
+                    location=self.config.location,
+                )
+            else:
+                # Fallback to AI Studio (free tier / API key)
+                self._client = genai.Client(api_key=self.config.api_key)
 
         return self._client
 
