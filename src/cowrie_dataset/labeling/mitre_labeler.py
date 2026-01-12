@@ -18,10 +18,17 @@ The three levels from the paper:
   - Level 3 (Low): Reconnaissance and discovery - uname, cat /etc/passwd,
     checking system resources
 
+v2 upgrades (making algo path competitive with agent):
+  - Kill chain detection: boost severity when recon -> persist -> impact combo detected
+  - Base64 decoding: attackers love to hide commands in base64, decode before scanning
+  - Behavioral tagging: machine-gun script vs slow human typing
+  - Unknown tiers: not all unknowns are equal, split by complexity
+
 Reference: MITRE ATT&CK Enterprise Tactics
 https://attack.mitre.org/tactics/enterprise/
 """
 
+import base64
 import re
 from dataclasses import dataclass, field
 from typing import Any
@@ -32,20 +39,28 @@ from ..aggregators.session_aggregator import Session
 class SessionLabel:
     """
     Labels assigned to a session.
-    
-    Contains the threat level, primary tactic, and all detected tactics.
+
+    Contains threat level, tactics, and behavioral tags.
     """
-    level: int  # 1=high, 2=medium, 3=low
-    primary_tactic: str  # The most severe tactic detected
-    all_tactics: list[str] = field(default_factory=list)  # All tactics detected
-    matched_patterns: list[str] = field(default_factory=list)  # Which patterns matched (for debugging)
-    
+    level: int  # 1=high/critical, 2=medium, 3=low
+    primary_tactic: str  # most severe tactic detected
+    all_tactics: list[str] = field(default_factory=list)
+    matched_patterns: list[str] = field(default_factory=list)  # for debugging
+
+    # v2: behavioral tagging
+    behavior_tag: str = "UNKNOWN_SPEED"  # MACHINE_SPEED, HUMAN_SPEED, or UNKNOWN_SPEED
+    kill_chain_detected: bool = False  # true if multi-stage attack pattern found
+    obfuscation_detected: bool = False  # true if we decoded base64/hex
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "level": self.level,
             "primary_tactic": self.primary_tactic,
             "all_tactics": self.all_tactics,
             "matched_patterns": self.matched_patterns[:20],  # cap for storage
+            "behavior_tag": self.behavior_tag,
+            "kill_chain_detected": self.kill_chain_detected,
+            "obfuscation_detected": self.obfuscation_detected,
         }
 
 
@@ -163,18 +178,25 @@ LEVEL_3_PATTERNS = {
 class MitreLabeler:
     """
     Labels sessions with MITRE ATT&CK tactics and threat levels.
-    
+
+    v2: now includes stateful analysis (kill chains), base64 decoding,
+    and behavioral tagging. Not just dumb regex anymore.
+
     Usage:
         labeler = MitreLabeler()
         label = labeler.label(session)
         print(f"Level: {label.level}, Tactic: {label.primary_tactic}")
     """
-    
+
+    # regex to find base64-ish strings (at least 8 chars to catch short payloads)
+    # real base64 strings are usually longer but attackers do use short ones
+    _BASE64_PATTERN = re.compile(r'[A-Za-z0-9+/]{8,}={0,2}')
+
     def __init__(self):
-        # Compile all patterns once at init time
-        # Structure: [(level, tactic, pattern_name, compiled_regex), ...]
+        # compile all patterns once at init
+        # structure: [(level, tactic, pattern_name, compiled_regex), ...]
         self._patterns = []
-        
+
         for level, pattern_dict in [
             (1, LEVEL_1_PATTERNS),
             (2, LEVEL_2_PATTERNS),
@@ -183,19 +205,126 @@ class MitreLabeler:
             for tactic, patterns in pattern_dict.items():
                 for pattern_name, regex in patterns:
                     self._patterns.append((level, tactic, pattern_name, regex))
+
+    def _try_decode_base64(self, s: str) -> str | None:
+        """
+        Attempt to decode a string as base64.
+        Returns decoded string if it looks like valid ascii text, None otherwise.
+        """
+        try:
+            decoded = base64.b64decode(s).decode('utf-8', errors='strict')
+            # sanity check: should be mostly printable ascii
+            # if it's binary garbage, skip it
+            printable_ratio = sum(c.isprintable() or c in '\n\r\t' for c in decoded) / len(decoded)
+            if printable_ratio > 0.8:
+                return decoded
+        except Exception:
+            pass
+        return None
+
+    def _normalize_commands(self, commands: list[str]) -> tuple[list[str], bool]:
+        """
+        Pre-process commands to decode any base64 obfuscation.
+        Returns (normalized_commands, found_obfuscation).
+
+        Attackers love stuff like: echo "cm0gLXJmIC8="|base64 -d|sh
+        We want to catch that 'rm -rf /' hiding in there.
+        """
+        normalized = list(commands)  # start with originals
+        found_obfuscation = False
+
+        for cmd in commands:
+            # look for base64-ish blobs in the command
+            for match in self._BASE64_PATTERN.finditer(cmd):
+                candidate = match.group()
+                decoded = self._try_decode_base64(candidate)
+                if decoded and decoded not in normalized:
+                    # found something real, add it to scan list
+                    normalized.append(decoded)
+                    found_obfuscation = True
+
+        return normalized, found_obfuscation
+
+    def _detect_kill_chain(self, tactics: set[str]) -> bool:
+        """
+        Check for multi-stage attack patterns (kill chain).
+
+        If an attacker does recon, then persists, then executes or impacts...
+        that's a complete attack chain and worse than any single tactic.
+        """
+        # these combos indicate a real attack, not just drive-by noise
+        dangerous_combos = [
+            # classic: scout the system, drop persistence, run payload
+            {"Discovery", "Persistence", "Execution"},
+            {"Discovery", "Persistence", "Impact"},
+            # recon + immediate impact (aggressive attacker)
+            {"Discovery", "Execution", "Impact"},
+            # privesc chain: recon, escalate, persist
+            {"Discovery", "Privilege Escalation", "Persistence"},
+            # C2 + execution = bad news
+            {"Command and Control", "Execution"},
+            {"Command and Control", "Impact"},
+        ]
+
+        for combo in dangerous_combos:
+            if combo.issubset(tactics):
+                return True
+        return False
+
+    def _get_behavior_tag(self, session: Session, cmd_count: int) -> str:
+        """
+        Tag session as machine or human based on command rate.
+
+        Bots paste 50 commands in a second. Humans type slowly.
+        This isn't foolproof but it's a useful signal.
+        """
+        duration = session.get_computed_duration()
+
+        if duration <= 0 or cmd_count == 0:
+            return "UNKNOWN_SPEED"
+
+        cmds_per_sec = cmd_count / duration
+
+        # thresholds tuned based on what feels right
+        # >5 cmd/sec is definitely automated
+        # <0.3 cmd/sec is probably a human exploring
+        if cmds_per_sec > 5.0:
+            return "MACHINE_SPEED"
+        elif cmds_per_sec < 0.3:
+            return "HUMAN_SPEED"
+        else:
+            return "UNKNOWN_SPEED"
+
+    def _classify_unknown(self, commands: list[str]) -> str:
+        """
+        Not all "unknown" sessions are equal.
+        Split into tiers based on command complexity.
+
+        Unknown-High: long commands, pipes, special chars = likely novel attack
+        Unknown-Low: short simple strings = probably typos or aliases
+        """
+        suspicious_chars = {'|', '>', '<', ';', '&', '$', '`'}
+
+        for cmd in commands:
+            # long command or special chars = suspicious
+            if len(cmd) > 50:
+                return "Unknown Activity (High)"
+            if any(c in cmd for c in suspicious_chars):
+                return "Unknown Activity (High)"
+
+        return "Unknown Activity (Low)"
     
     def label(self, session: Session) -> SessionLabel:
         """
         Assign labels to a session based on its commands.
-        
-        Scans all commands and returns the most severe level found,
-        along with all detected tactics.
+
+        v2: now includes normalization, kill chain detection, and behavioral tagging.
         """
-        # Get all command inputs
-        commands = [c["input"] for c in session.commands if c.get("input")]
-        
-        # If no commands, it's either failed auth or login with no action
-        if not commands:
+        # get raw command inputs
+        raw_commands = [c["input"] for c in session.commands if c.get("input")]
+
+        # no commands = either failed auth or idle session
+        if not raw_commands:
             if not session.auth_success:
                 return SessionLabel(
                     level=3,
@@ -210,57 +339,83 @@ class MitreLabeler:
                     all_tactics=["No Action"],
                     matched_patterns=[],
                 )
-        
-        # Scan all commands for pattern matches
+
+        # v2: normalize commands (decode base64 obfuscation)
+        commands, obfuscation_detected = self._normalize_commands(raw_commands)
+
+        # v2: get behavioral tag early
+        behavior_tag = self._get_behavior_tag(session, len(raw_commands))
+
+        # scan all commands (including decoded ones) for pattern matches
         matches = []  # [(level, tactic, pattern_name), ...]
-        
+
         for cmd in commands:
             for level, tactic, pattern_name, regex in self._patterns:
                 if regex.search(cmd):
                     matches.append((level, tactic, pattern_name))
-        
-        # If no patterns matched, it's unknown activity (still somewhat suspicious)
+
+        # no patterns matched = unknown activity
         if not matches:
+            # v2: split unknowns into high/low complexity
+            unknown_tactic = self._classify_unknown(raw_commands)
             return SessionLabel(
                 level=3,
-                primary_tactic="Unknown Activity",
-                all_tactics=["Unknown Activity"],
+                primary_tactic=unknown_tactic,
+                all_tactics=[unknown_tactic],
                 matched_patterns=[],
+                behavior_tag=behavior_tag,
+                obfuscation_detected=obfuscation_detected,
             )
-        
-        # Find the most severe level
+
+        # find most severe level
         min_level = min(m[0] for m in matches)
-        
-        # Get all tactics detected
-        all_tactics = list(set(m[1] for m in matches))
-        
-        # Primary tactic is the first one at the minimum (most severe) level
-        # This respects the ordering we defined in the pattern dicts
+
+        # collect all tactics detected
+        all_tactics_set = set(m[1] for m in matches)
+        all_tactics = list(all_tactics_set)
+
+        # v2: kill chain detection - if we see a multi-stage attack, boost to level 1
+        kill_chain_detected = self._detect_kill_chain(all_tactics_set)
+        if kill_chain_detected and min_level > 1:
+            min_level = 1  # upgrade severity
+
+        # primary tactic = first one at the most severe level (respects priority ordering)
         level_1_tactics = ["Impact", "Execution", "Command and Control", "Defense Evasion"]
         level_2_tactics = ["Persistence", "Privilege Escalation", "Credential Access"]
         level_3_tactics = ["Discovery"]
-        
+
         if min_level == 1:
             priority_order = level_1_tactics
         elif min_level == 2:
             priority_order = level_2_tactics
         else:
             priority_order = level_3_tactics
-        
+
         primary_tactic = "Unknown"
         for tactic in priority_order:
             if tactic in all_tactics:
                 primary_tactic = tactic
                 break
-        
-        # Collect matched pattern names (useful for debugging and analysis)
+
+        # if kill chain bumped us to level 1, primary tactic should reflect that
+        if kill_chain_detected and primary_tactic not in level_1_tactics:
+            primary_tactic = "Kill Chain Detected"
+
+        # collect matched pattern names (useful for debugging)
         matched_patterns = list(set(m[2] for m in matches))
-        
+        if kill_chain_detected:
+            matched_patterns.append("kill_chain")
+        if obfuscation_detected:
+            matched_patterns.append("base64_decoded")
+
         return SessionLabel(
             level=min_level,
             primary_tactic=primary_tactic,
             all_tactics=sorted(all_tactics),
             matched_patterns=sorted(matched_patterns),
+            behavior_tag=behavior_tag,
+            kill_chain_detected=kill_chain_detected,
+            obfuscation_detected=obfuscation_detected,
         )
 
 
