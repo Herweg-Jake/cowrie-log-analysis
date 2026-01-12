@@ -3,6 +3,8 @@ Base infrastructure for LLM agents.
 
 Nothing fancy here - just the config and response dataclasses, plus a base
 class that handles the boring stuff (API calls, retries, rate limiting).
+
+Supports Anthropic, OpenAI, and Gemini APIs.
 """
 
 import os
@@ -17,32 +19,74 @@ class AgentConfig:
     """
     Config for LLM API calls.
 
-    Defaults are set for Claude Sonnet which is a good balance of
-    cost/speed/quality. Adjust model and pricing if using something else.
+    Defaults to Gemini Flash (free tier) since that's what most people
+    will use for testing. Switch to Pro or Claude for production.
     """
 
-    provider: str = "anthropic"  # "anthropic" or "openai"
-    model: str = "claude-sonnet-4-20250514"
+    provider: str = "gemini"  # "anthropic", "openai", or "gemini"
+    model: str = "gemini-1.5-flash"
     api_key: Optional[str] = None
 
     # generation params
     max_tokens: int = 1024
     temperature: float = 0.1  # low = consistent, high = creative
 
-    # don't hammer the API
-    requests_per_minute: int = 50
+    # rate limits vary by provider/tier - gemini free is strict (15 RPM)
+    requests_per_minute: int = 15
     retry_attempts: int = 3
-    retry_delay: float = 1.0
+    retry_delay: float = 2.0  # gemini needs longer backoff
 
-    # for cost tracking (Claude Sonnet pricing as of Jan 2025)
-    input_cost_per_1k: float = 0.003
-    output_cost_per_1k: float = 0.015
+    # pricing per 1k tokens - defaults for gemini-1.5-flash
+    # flash is basically free, pro is $1.25/$5 per 1M tokens
+    input_cost_per_1k: float = 0.0
+    output_cost_per_1k: float = 0.0
 
     def __post_init__(self):
-        # try to grab API key from env if not provided
+        # grab API key from env if not provided
         if self.api_key is None:
-            env_var = "ANTHROPIC_API_KEY" if self.provider == "anthropic" else "OPENAI_API_KEY"
-            self.api_key = os.environ.get(env_var)
+            if self.provider == "anthropic":
+                self.api_key = os.environ.get("ANTHROPIC_API_KEY")
+            elif self.provider == "openai":
+                self.api_key = os.environ.get("OPENAI_API_KEY")
+            else:  # gemini
+                self.api_key = os.environ.get("GOOGLE_API_KEY")
+
+
+# handy presets so you don't have to remember all the params
+def gemini_flash_config(**overrides) -> AgentConfig:
+    """Free tier Gemini - good for testing, strict rate limits."""
+    return AgentConfig(
+        provider="gemini",
+        model="gemini-1.5-flash",
+        requests_per_minute=15,  # free tier limit
+        input_cost_per_1k=0.0,
+        output_cost_per_1k=0.0,
+        **overrides,
+    )
+
+
+def gemini_pro_config(**overrides) -> AgentConfig:
+    """Gemini Pro - better quality, uses your $300 credits."""
+    return AgentConfig(
+        provider="gemini",
+        model="gemini-1.5-pro",
+        requests_per_minute=60,
+        input_cost_per_1k=0.00125,  # $1.25 per 1M
+        output_cost_per_1k=0.005,   # $5 per 1M
+        **overrides,
+    )
+
+
+def claude_sonnet_config(**overrides) -> AgentConfig:
+    """Claude Sonnet - solid all-rounder."""
+    return AgentConfig(
+        provider="anthropic",
+        model="claude-sonnet-4-20250514",
+        requests_per_minute=50,
+        input_cost_per_1k=0.003,
+        output_cost_per_1k=0.015,
+        **overrides,
+    )
 
 
 @dataclass
@@ -106,9 +150,13 @@ class BaseAgent(ABC):
         if self.config.provider == "anthropic":
             import anthropic
             self._client = anthropic.Anthropic(api_key=self.config.api_key)
-        else:
+        elif self.config.provider == "openai":
             import openai
             self._client = openai.OpenAI(api_key=self.config.api_key)
+        else:  # gemini
+            import google.generativeai as genai
+            genai.configure(api_key=self.config.api_key)
+            self._client = genai.GenerativeModel(self.config.model)
 
         return self._client
 
@@ -147,8 +195,8 @@ class BaseAgent(ABC):
                 response.usage.input_tokens,
                 response.usage.output_tokens,
             )
-        else:
-            # openai style
+
+        elif self.config.provider == "openai":
             response = client.chat.completions.create(
                 model=self.config.model,
                 max_tokens=self.config.max_tokens,
@@ -162,6 +210,26 @@ class BaseAgent(ABC):
                 response.choices[0].message.content,
                 response.usage.prompt_tokens,
                 response.usage.completion_tokens,
+            )
+
+        else:  # gemini
+            # gemini doesn't have system messages, so we prepend it
+            full_prompt = f"{self.system_prompt}\n\n---\n\n{user_prompt}"
+
+            response = client.generate_content(
+                full_prompt,
+                generation_config={
+                    "max_output_tokens": self.config.max_tokens,
+                    "temperature": self.config.temperature,
+                },
+            )
+
+            # gemini's token counting is in usage_metadata
+            usage = response.usage_metadata
+            return (
+                response.text,
+                usage.prompt_token_count,
+                usage.candidates_token_count,
             )
 
     def analyze(self, session: dict) -> AgentResponse:
