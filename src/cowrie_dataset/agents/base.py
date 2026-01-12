@@ -8,6 +8,7 @@ Supports Anthropic, OpenAI, and Gemini APIs.
 """
 
 import os
+import re
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -173,6 +174,37 @@ class BaseAgent(ABC):
 
         self._request_times.append(time.time())
 
+    def _parse_retry_delay(self, error: Exception) -> Optional[float]:
+        """
+        Extract retry delay from API error responses.
+
+        Google's 429 errors include a suggested retry delay in the response.
+        This tries to parse it from the error message or response details.
+        """
+        error_str = str(error)
+
+        # Look for "retryDelay": "32s" pattern in error details
+        match = re.search(r"'retryDelay':\s*'(\d+)s?'", error_str)
+        if match:
+            return float(match.group(1))
+
+        # Look for "Please retry in X.XXXs" pattern in message
+        match = re.search(r"Please retry in (\d+(?:\.\d+)?)s", error_str)
+        if match:
+            return float(match.group(1))
+
+        return None
+
+    def _is_quota_error(self, error: Exception) -> bool:
+        """Check if an error is a retryable quota/rate limit error."""
+        error_str = str(error)
+        return (
+            "429" in error_str
+            or "RESOURCE_EXHAUSTED" in error_str
+            or "quota" in error_str.lower()
+            or "rate limit" in error_str.lower()
+        )
+
     def _call_api(self, user_prompt: str) -> tuple[str, int, int]:
         """
         Make the actual API call.
@@ -270,8 +302,40 @@ class BaseAgent(ABC):
                 )
 
             except Exception as e:
-                if attempt < self.config.retry_attempts - 1:
-                    # exponential backoff
+                is_last_attempt = attempt >= self.config.retry_attempts - 1
+
+                if self._is_quota_error(e):
+                    # Quota/rate limit error - respect API's suggested retry delay
+                    retry_delay = self._parse_retry_delay(e)
+
+                    if retry_delay is not None:
+                        # Cap at 60s to avoid waiting forever
+                        retry_delay = min(retry_delay, 60.0)
+
+                        if is_last_attempt:
+                            # Even on last attempt, provide useful error info
+                            return AgentResponse(
+                                success=False,
+                                result={},
+                                error=f"Quota exceeded after {attempt + 1} attempts. "
+                                      f"API suggests retry in {retry_delay:.0f}s. "
+                                      "Check your plan/billing at https://ai.google.dev/gemini-api/docs/rate-limits",
+                                retries=attempt,
+                            )
+
+                        time.sleep(retry_delay)
+                    elif not is_last_attempt:
+                        # No retry delay provided, use exponential backoff
+                        time.sleep(self.config.retry_delay * (attempt + 1))
+                    else:
+                        return AgentResponse(
+                            success=False,
+                            result={},
+                            error=f"Quota exceeded: {e}",
+                            retries=attempt,
+                        )
+                elif not is_last_attempt:
+                    # Non-quota error, standard exponential backoff
                     time.sleep(self.config.retry_delay * (attempt + 1))
                 else:
                     return AgentResponse(
