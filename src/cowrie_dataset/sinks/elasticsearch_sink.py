@@ -141,6 +141,10 @@ SESSION_INDEX_MAPPING = {
                     "all_tactics": {"type": "keyword"},
                     "matched_patterns": {"type": "keyword"},
                     "session_type": {"type": "keyword"},
+                    # v2 fields: stateful analysis
+                    "behavior_tag": {"type": "keyword"},
+                    "kill_chain_detected": {"type": "boolean"},
+                    "obfuscation_detected": {"type": "boolean"},
                 }
             },
             

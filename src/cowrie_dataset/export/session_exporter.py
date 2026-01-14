@@ -140,12 +140,7 @@ def export_session(session: Session, geo_enricher=None) -> ExportedSession:
         ssh_version=session.ssh_version,
         hassh=session.hassh,
         features=all_features,
-        labels_rule_based={
-            "level": label.level,
-            "primary_tactic": label.primary_tactic,
-            "all_tactics": label.all_tactics,
-            "matched_patterns": label.matched_patterns,
-        },
+        labels_rule_based=label.to_dict(),
         geo=geo_features,
         session_type=session.get_session_type(),
         event_count=session.event_count,
