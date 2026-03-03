@@ -190,9 +190,43 @@ def extract_message_features(session: Session) -> dict[str, Any]:
         "extra_unique_commands": len(set(commands)),
         "extra_keyword_curl": count_pattern(commands, PATTERN_CURL),
         "extra_keyword_nc": count_pattern(commands, PATTERN_NC),
+
+        # v3: timing, length, diversity, and shell operator features
+        "extra_min_inter_command_gap": _compute_min_inter_command_gap(session),
+        "extra_max_cmd_length": max(len(cmd) for cmd in commands),
+        "extra_command_diversity_ratio": round(len(set(commands)) / num_commands, 4),
+        "extra_has_pipe": sum(1 for cmd in commands if '|' in cmd),
+        "extra_has_redirect": sum(1 for cmd in commands if '>' in cmd),
     }
-    
+
     return features
+
+
+def _compute_min_inter_command_gap(session: Session) -> float:
+    """
+    Minimum time between any two consecutive commands.
+
+    Best single feature for distinguishing pasted/scripted input from
+    interactive typing. A value under 0.05s is almost certainly automated.
+    Returns -1.0 if there aren't enough timestamped commands.
+    """
+    timestamps = []
+    for cmd in session.commands:
+        ts = cmd.get("timestamp")
+        if ts is not None:
+            timestamps.append(ts)
+
+    if len(timestamps) < 2:
+        return -1.0
+
+    timestamps.sort()
+    min_gap = float('inf')
+    for i in range(1, len(timestamps)):
+        delta = (timestamps[i] - timestamps[i - 1]).total_seconds()
+        if delta < min_gap:
+            min_gap = delta
+
+    return round(min_gap, 6)
 
 
 def _empty_message_features() -> dict[str, Any]:
@@ -242,4 +276,9 @@ def _empty_message_features() -> dict[str, Any]:
         "extra_unique_commands": 0,
         "extra_keyword_curl": 0,
         "extra_keyword_nc": 0,
+        "extra_min_inter_command_gap": -1.0,
+        "extra_max_cmd_length": 0,
+        "extra_command_diversity_ratio": 0.0,
+        "extra_has_pipe": 0,
+        "extra_has_redirect": 0,
     }

@@ -52,6 +52,12 @@ class SessionLabel:
     kill_chain_detected: bool = False  # true if multi-stage attack pattern found
     obfuscation_detected: bool = False  # true if we decoded base64/hex
 
+    # v3: additional fields for pipeline comparison and Kibana filtering
+    sophistication_score: int = 1  # 1-5 score based on observable complexity
+    tactic_count: int = 0  # number of distinct MITRE tactics observed
+    has_download: bool = False  # promoted from features.F46_has_files
+    has_upload: bool = False
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "level": self.level,
@@ -61,6 +67,10 @@ class SessionLabel:
             "behavior_tag": self.behavior_tag,
             "kill_chain_detected": self.kill_chain_detected,
             "obfuscation_detected": self.obfuscation_detected,
+            "sophistication_score": self.sophistication_score,
+            "tactic_count": self.tactic_count,
+            "has_download": self.has_download,
+            "has_upload": self.has_upload,
         }
 
 
@@ -90,16 +100,30 @@ LEVEL_1_PATTERNS = {
         ("source_script", re.compile(r'\bsource\s+\S+|^\.\s+\S+', re.IGNORECASE)),
         ("nohup", re.compile(r'\bnohup\s+', re.IGNORECASE)),
         ("eval", re.compile(r'\beval\s+', re.IGNORECASE)),
+        ("dropper", re.compile(r'chmod.*&&.*\./', re.IGNORECASE)),
     ],
     
     "Command and Control": [
         ("wget_execute", re.compile(r'\bwget\s+.*\|\s*(ba)?sh', re.IGNORECASE)),
         ("curl_execute", re.compile(r'\bcurl\s+.*\|\s*(ba)?sh', re.IGNORECASE)),
         ("nc_shell", re.compile(r'\b(nc|netcat|ncat)\s+.*-e\s', re.IGNORECASE)),
+        ("bash_revshell", re.compile(r'/dev/tcp/', re.IGNORECASE)),
+        ("python_revshell", re.compile(r'socket.*connect.*dup2', re.IGNORECASE)),
+        ("perl_revshell", re.compile(r'perl.*socket.*connect', re.IGNORECASE)),
         ("tftp_get", re.compile(r'\btftp\s+', re.IGNORECASE)),
         ("wget_o", re.compile(r'\bwget\s+.*-O\s', re.IGNORECASE)),
         ("curl_o", re.compile(r'\bcurl\s+.*-o\s', re.IGNORECASE)),
         ("base64_decode", re.compile(r'\bbase64\s+(-d|--decode)', re.IGNORECASE)),
+    ],
+
+    "Resource Hijacking": [
+        ("xmrig", re.compile(r'\bxmrig\b', re.IGNORECASE)),
+        ("stratum_proto", re.compile(r'stratum\+tcp://', re.IGNORECASE)),
+        ("minerd", re.compile(r'\bminerd\b', re.IGNORECASE)),
+        ("cpuminer", re.compile(r'\bcpuminer\b', re.IGNORECASE)),
+        ("donate_level", re.compile(r'--donate-level', re.IGNORECASE)),
+        ("nicehash", re.compile(r'\bnicehash\b', re.IGNORECASE)),
+        ("cryptonight", re.compile(r'\bcryptonight\b', re.IGNORECASE)),
     ],
     
     "Defense Evasion": [
@@ -109,6 +133,11 @@ LEVEL_1_PATTERNS = {
         ("rm_logs", re.compile(r'\brm\s+.*(/var/log/|\.bash_history|\.history)', re.IGNORECASE)),
         ("truncate_logs", re.compile(r'>\s*/var/log/|echo\s*>\s*/var/log/', re.IGNORECASE)),
         ("dev_null_redirect", re.compile(r'2>/dev/null.*&>/dev/null', re.IGNORECASE)),
+        ("systemctl_stop", re.compile(r'\bsystemctl\s+stop\b', re.IGNORECASE)),
+        ("service_stop", re.compile(r'\bservice\s+\S+\s+stop\b', re.IGNORECASE)),
+        ("ufw_disable", re.compile(r'\bufw\s+disable\b', re.IGNORECASE)),
+        ("selinux_disable", re.compile(r'\bsetenforce\s+0\b', re.IGNORECASE)),
+        ("iptables_flush", re.compile(r'\biptables\s+-F\b', re.IGNORECASE)),
     ],
 }
 
@@ -171,6 +200,10 @@ LEVEL_3_PATTERNS = {
         ("find_command", re.compile(r'\bfind\s+/', re.IGNORECASE)),
         ("env_command", re.compile(r'\benv\b|\bprintenv\b', re.IGNORECASE)),
         ("dmesg", re.compile(r'\bdmesg\b', re.IGNORECASE)),
+        ("cat_cpuinfo", re.compile(r'\bcat\s+/proc/cpuinfo', re.IGNORECASE)),
+        ("dmidecode", re.compile(r'\bdmidecode\b', re.IGNORECASE)),
+        ("virt_detect", re.compile(r'\b(virt-what|systemd-detect-virt)\b', re.IGNORECASE)),
+        ("docker_check", re.compile(r'\.dockerenv|/proc/1/cgroup', re.IGNORECASE)),
     ],
 }
 
@@ -188,9 +221,21 @@ class MitreLabeler:
         print(f"Level: {label.level}, Tactic: {label.primary_tactic}")
     """
 
-    # regex to find base64-ish strings (at least 8 chars to catch short payloads)
-    # real base64 strings are usually longer but attackers do use short ones
-    _BASE64_PATTERN = re.compile(r'[A-Za-z0-9+/]{8,}={0,2}')
+    # Patterns for explicit obfuscation contexts (not just raw base64-ish strings)
+    # We look for actual decode pipelines, not random 8-char substrings
+    _BASE64_DECODE_PIPE = re.compile(
+        r'(?:echo\s+["\']?[A-Za-z0-9+/=]+["\']?\s*\|.*\bbase64\s+(?:-d|--decode))'
+        r'|(?:\bbase64\s+(?:-d|--decode)\s+<<<)',
+        re.IGNORECASE,
+    )
+    _HEX_ESCAPE_PIPE = re.compile(
+        r"echo\s+-[ne]+\s+['\"].*\\x[0-9a-fA-F]{2}.*['\"].*\|\s*(ba)?sh",
+        re.IGNORECASE,
+    )
+    # Standalone base64 -d (already caught in L1 patterns but useful for the
+    # obfuscation flag independently)
+    _BASE64_DECODE_CMD = re.compile(r'\bbase64\s+(-d|--decode)', re.IGNORECASE)
+    _HEX_ESCAPE_PATTERN = re.compile(r'\\x[0-9a-fA-F]{2}', re.IGNORECASE)
 
     def __init__(self):
         # compile all patterns once at init
@@ -224,23 +269,43 @@ class MitreLabeler:
 
     def _normalize_commands(self, commands: list[str]) -> tuple[list[str], bool]:
         """
-        Pre-process commands to decode any base64 obfuscation.
+        Pre-process commands to decode obfuscated payloads.
         Returns (normalized_commands, found_obfuscation).
 
-        Attackers love stuff like: echo "cm0gLXJmIC8="|base64 -d|sh
-        We want to catch that 'rm -rf /' hiding in there.
+        Instead of scanning every 8-char substring as potential base64 (too noisy),
+        we only decode when there's an explicit decode context:
+        - echo XXX | base64 -d
+        - echo -e '\\xNN...' | sh
+        - base64 -d <<< XXX
+        - hex escape sequences (\\x patterns)
         """
         normalized = list(commands)  # start with originals
         found_obfuscation = False
 
         for cmd in commands:
-            # look for base64-ish blobs in the command
-            for match in self._BASE64_PATTERN.finditer(cmd):
-                candidate = match.group()
-                decoded = self._try_decode_base64(candidate)
-                if decoded and decoded not in normalized:
-                    # found something real, add it to scan list
-                    normalized.append(decoded)
+            # check for base64 decode pipelines
+            if self._BASE64_DECODE_PIPE.search(cmd):
+                found_obfuscation = True
+                # try to extract and decode the base64 blob
+                b64_blob = re.compile(r'[A-Za-z0-9+/]{8,}={0,2}')
+                for match in b64_blob.finditer(cmd):
+                    decoded = self._try_decode_base64(match.group())
+                    if decoded and decoded not in normalized:
+                        normalized.append(decoded)
+
+            # check for standalone base64 -d (might be in a pipe from a file)
+            elif self._BASE64_DECODE_CMD.search(cmd):
+                found_obfuscation = True
+
+            # check for hex escape sequences piped to sh/bash
+            if self._HEX_ESCAPE_PIPE.search(cmd):
+                found_obfuscation = True
+
+            # hex escapes in echo commands are suspicious even without a pipe
+            if self._HEX_ESCAPE_PATTERN.search(cmd):
+                # only flag if there are multiple hex escapes (not just one stray \x00)
+                hex_count = len(self._HEX_ESCAPE_PATTERN.findall(cmd))
+                if hex_count >= 3:
                     found_obfuscation = True
 
         return normalized, found_obfuscation
@@ -261,9 +326,14 @@ class MitreLabeler:
             {"Discovery", "Execution", "Impact"},
             # privesc chain: recon, escalate, persist
             {"Discovery", "Privilege Escalation", "Persistence"},
-            # C2 + execution = bad news
+            # C2 + execution (download + execute is the most common bot pattern)
             {"Command and Control", "Execution"},
             {"Command and Control", "Impact"},
+            # credential theft + persistence: steal creds, add own keys
+            {"Credential Access", "Persistence"},
+            # cryptomining chains
+            {"Command and Control", "Resource Hijacking"},
+            {"Execution", "Resource Hijacking"},
         ]
 
         for combo in dangerous_combos:
@@ -271,39 +341,133 @@ class MitreLabeler:
                 return True
         return False
 
+    def _get_min_inter_command_gap(self, session: Session) -> float | None:
+        """
+        Get the minimum time gap between any two consecutive commands.
+
+        A gap under 0.05s almost certainly means pasted/scripted input.
+        Returns None if there aren't enough commands with timestamps.
+        """
+        timestamps = []
+        for cmd in session.commands:
+            ts = cmd.get("timestamp")
+            if ts is not None:
+                timestamps.append(ts)
+
+        if len(timestamps) < 2:
+            return None
+
+        timestamps.sort()
+        min_gap = float('inf')
+        for i in range(1, len(timestamps)):
+            delta = (timestamps[i] - timestamps[i - 1]).total_seconds()
+            if delta < min_gap:
+                min_gap = delta
+
+        return min_gap
+
     def _get_behavior_tag(self, session: Session, cmd_count: int) -> str:
         """
-        Tag session as machine or human based on command rate.
+        Tag session as machine or human based on command timing.
 
-        Bots paste 50 commands in a second. Humans type slowly.
-        This isn't foolproof but it's a useful signal.
+        Uses two signals:
+        1. Overall command rate (cmds/sec)
+        2. Minimum inter-command gap (catches pasted command blocks)
+
+        Bots paste commands faster than any human can type.
         """
         duration = session.get_computed_duration()
 
         if duration <= 0 or cmd_count == 0:
             return "UNKNOWN_SPEED"
 
+        # check for pasted commands first - if any two commands arrived
+        # within 0.05s of each other, that's definitely not a human
+        min_gap = self._get_min_inter_command_gap(session)
+        if min_gap is not None and min_gap < 0.05:
+            return "MACHINE_SPEED"
+
         cmds_per_sec = cmd_count / duration
 
-        # thresholds tuned based on what feels right
-        # >5 cmd/sec is definitely automated
-        # <0.3 cmd/sec is probably a human exploring
-        if cmds_per_sec > 5.0:
+        # lowered from 5.0 — in honeypots, Cowrie's execution simulation
+        # slows down even automated sessions, so 2 cmd/sec is plenty fast
+        if cmds_per_sec > 2.0:
             return "MACHINE_SPEED"
         elif cmds_per_sec < 0.3:
             return "HUMAN_SPEED"
         else:
             return "UNKNOWN_SPEED"
 
+    # common Linux commands for fuzzy matching against unknown inputs
+    # if someone types "unme" instead of "uname" we want to recognize that
+    _COMMON_LINUX_CMDS = {
+        "ls", "cd", "cat", "cp", "mv", "rm", "mkdir", "rmdir", "touch",
+        "echo", "grep", "find", "sort", "head", "tail", "less", "more",
+        "chmod", "chown", "chgrp", "sudo", "su", "passwd", "whoami",
+        "uname", "hostname", "ifconfig", "ping", "curl", "wget", "ssh",
+        "scp", "tar", "gzip", "gunzip", "zip", "unzip", "ps", "kill",
+        "top", "htop", "df", "du", "free", "mount", "umount", "fdisk",
+        "apt", "yum", "dnf", "pip", "npm", "git", "docker", "systemctl",
+        "service", "crontab", "iptables", "netstat", "ss", "nmap",
+        "vi", "vim", "nano", "sed", "awk", "python", "perl", "bash",
+        "export", "source", "alias", "history", "man", "which", "locate",
+    }
+
+    def _looks_like_typo(self, cmd: str) -> bool:
+        """
+        Check if an unknown command looks like a typo of a known binary.
+
+        Uses simple edit distance — if it's within 2 chars of a common
+        command, it's probably a typo rather than something novel.
+        """
+        # grab the first word (the binary name)
+        first_word = cmd.split()[0].strip("./") if cmd.strip() else ""
+        if not first_word or len(first_word) > 20:
+            return False
+
+        first_lower = first_word.lower()
+
+        # exact match means it's known, not a typo
+        if first_lower in self._COMMON_LINUX_CMDS:
+            return False
+
+        # simple edit distance check (max distance 2)
+        for known in self._COMMON_LINUX_CMDS:
+            if abs(len(first_lower) - len(known)) > 2:
+                continue
+            dist = self._edit_distance(first_lower, known)
+            if dist <= 2:
+                return True
+
+        return False
+
+    @staticmethod
+    def _edit_distance(a: str, b: str) -> int:
+        """Levenshtein distance between two strings. Capped at 3 for speed."""
+        if abs(len(a) - len(b)) > 2:
+            return 3
+        # standard DP but bail early
+        m, n = len(a), len(b)
+        prev = list(range(n + 1))
+        for i in range(1, m + 1):
+            curr = [i] + [0] * n
+            for j in range(1, n + 1):
+                cost = 0 if a[i - 1] == b[j - 1] else 1
+                curr[j] = min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost)
+            prev = curr
+        return prev[n]
+
     def _classify_unknown(self, commands: list[str]) -> str:
         """
         Not all "unknown" sessions are equal.
-        Split into tiers based on command complexity.
+        Split into tiers based on command complexity and count.
 
-        Unknown-High: long commands, pipes, special chars = likely novel attack
-        Unknown-Low: short simple strings = probably typos or aliases
+        Unknown-High: long commands, pipes, special chars, many unknowns = likely novel attack
+        Unknown-Low: short simple strings, typos, or few commands
         """
         suspicious_chars = {'|', '>', '<', ';', '&', '$', '`'}
+        unknown_count = 0
+        typo_count = 0
 
         for cmd in commands:
             # long command or special chars = suspicious
@@ -312,16 +476,72 @@ class MitreLabeler:
             if any(c in cmd for c in suspicious_chars):
                 return "Unknown Activity (High)"
 
+            if self._looks_like_typo(cmd):
+                typo_count += 1
+            else:
+                unknown_count += 1
+
+        # many truly unknown commands = suspicious even if individually simple
+        if unknown_count >= 5:
+            return "Unknown Activity (High)"
+
         return "Unknown Activity (Low)"
     
+    def _compute_sophistication_score(
+        self,
+        level: int,
+        tactic_count: int,
+        kill_chain: bool,
+        obfuscation: bool,
+        matched_count: int,
+        commands: list[str],
+    ) -> int:
+        """
+        Score session sophistication from 1-5 based on observable indicators.
+
+        1 = single failed command or empty session
+        2 = basic recon only (uname, whoami)
+        3 = downloads or persistence attempts
+        4 = multi-stage with evasion or obfuscation
+        5 = novel techniques, anti-forensics, environment-aware behavior
+        """
+        # start with level as a rough baseline (inverted: level 1 = more severe)
+        if matched_count == 0:
+            return 1
+
+        score = 1
+
+        # level 3 (recon) = at least 2
+        if level <= 3 and matched_count > 0:
+            score = 2
+
+        # level 2 (persistence/privesc) or downloads = at least 3
+        if level <= 2:
+            score = 3
+
+        # multi-tactic or kill chain or obfuscation = at least 4
+        if tactic_count >= 3 or kill_chain or obfuscation:
+            score = 4
+
+        # environment-aware + evasion + multi-stage = 5
+        if kill_chain and obfuscation and tactic_count >= 4:
+            score = 5
+
+        return min(score, 5)
+
     def label(self, session: Session) -> SessionLabel:
         """
         Assign labels to a session based on its commands.
 
-        v2: now includes normalization, kill chain detection, and behavioral tagging.
+        v2: normalization, kill chain detection, behavioral tagging.
+        v3: sophistication scoring, tactic count, download/upload flags.
         """
         # get raw command inputs
         raw_commands = [c["input"] for c in session.commands if c.get("input")]
+
+        # track download/upload presence at the label level
+        has_download = len(session.downloads) > 0
+        has_upload = len(session.uploads) > 0
 
         # no commands = either failed auth or idle session
         if not raw_commands:
@@ -331,6 +551,10 @@ class MitreLabeler:
                     primary_tactic="Initial Access (Failed)",
                     all_tactics=["Initial Access (Failed)"],
                     matched_patterns=[],
+                    sophistication_score=1,
+                    tactic_count=1,
+                    has_download=has_download,
+                    has_upload=has_upload,
                 )
             else:
                 return SessionLabel(
@@ -338,9 +562,13 @@ class MitreLabeler:
                     primary_tactic="No Action",
                     all_tactics=["No Action"],
                     matched_patterns=[],
+                    sophistication_score=1,
+                    tactic_count=1,
+                    has_download=has_download,
+                    has_upload=has_upload,
                 )
 
-        # v2: normalize commands (decode base64 obfuscation)
+        # v2: normalize commands (decode obfuscation)
         commands, obfuscation_detected = self._normalize_commands(raw_commands)
 
         # v2: get behavioral tag early
@@ -365,6 +593,10 @@ class MitreLabeler:
                 matched_patterns=[],
                 behavior_tag=behavior_tag,
                 obfuscation_detected=obfuscation_detected,
+                sophistication_score=2 if obfuscation_detected else 1,
+                tactic_count=1,
+                has_download=has_download,
+                has_upload=has_upload,
             )
 
         # find most severe level
@@ -373,6 +605,7 @@ class MitreLabeler:
         # collect all tactics detected
         all_tactics_set = set(m[1] for m in matches)
         all_tactics = list(all_tactics_set)
+        tactic_count = len(all_tactics_set)
 
         # v2: kill chain detection - if we see a multi-stage attack, boost to level 1
         kill_chain_detected = self._detect_kill_chain(all_tactics_set)
@@ -380,7 +613,7 @@ class MitreLabeler:
             min_level = 1  # upgrade severity
 
         # primary tactic = first one at the most severe level (respects priority ordering)
-        level_1_tactics = ["Impact", "Execution", "Command and Control", "Defense Evasion"]
+        level_1_tactics = ["Impact", "Execution", "Command and Control", "Resource Hijacking", "Defense Evasion"]
         level_2_tactics = ["Persistence", "Privilege Escalation", "Credential Access"]
         level_3_tactics = ["Discovery"]
 
@@ -406,7 +639,17 @@ class MitreLabeler:
         if kill_chain_detected:
             matched_patterns.append("kill_chain")
         if obfuscation_detected:
-            matched_patterns.append("base64_decoded")
+            matched_patterns.append("obfuscation_decoded")
+
+        # v3: compute sophistication score
+        sophistication = self._compute_sophistication_score(
+            level=min_level,
+            tactic_count=tactic_count,
+            kill_chain=kill_chain_detected,
+            obfuscation=obfuscation_detected,
+            matched_count=len(matched_patterns),
+            commands=raw_commands,
+        )
 
         return SessionLabel(
             level=min_level,
@@ -416,6 +659,10 @@ class MitreLabeler:
             behavior_tag=behavior_tag,
             kill_chain_detected=kill_chain_detected,
             obfuscation_detected=obfuscation_detected,
+            sophistication_score=sophistication,
+            tactic_count=tactic_count,
+            has_download=has_download,
+            has_upload=has_upload,
         )
 
 

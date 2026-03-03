@@ -145,6 +145,11 @@ SESSION_INDEX_MAPPING = {
                     "behavior_tag": {"type": "keyword"},
                     "kill_chain_detected": {"type": "boolean"},
                     "obfuscation_detected": {"type": "boolean"},
+                    # v3 fields: pipeline comparison
+                    "sophistication_score": {"type": "integer"},
+                    "tactic_count": {"type": "integer"},
+                    "has_download": {"type": "boolean"},
+                    "has_upload": {"type": "boolean"},
                 }
             },
             
