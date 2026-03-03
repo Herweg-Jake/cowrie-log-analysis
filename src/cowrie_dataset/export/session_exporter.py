@@ -12,6 +12,7 @@ that's easier to work with in ML pipelines and Elasticsearch.
 import json
 from pathlib import Path
 from dataclasses import dataclass, asdict
+from datetime import datetime, timezone
 from typing import Iterator, Optional
 
 from ..aggregators import Session
@@ -71,6 +72,7 @@ class ExportedSession:
     # metadata
     session_type: str
     event_count: int
+    ingested_at: Optional[str] = None  # ISO timestamp of when data was exported
 
     def to_dict(self) -> dict:
         """Convert to plain dict - useful for JSON/ES."""
@@ -144,6 +146,7 @@ def export_session(session: Session, geo_enricher=None) -> ExportedSession:
         geo=geo_features,
         session_type=session.get_session_type(),
         event_count=session.event_count,
+        ingested_at=datetime.now(timezone.utc).isoformat(),
     )
 
 

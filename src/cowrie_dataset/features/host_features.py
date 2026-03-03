@@ -129,6 +129,10 @@ def extract_host_features(session: Session) -> dict[str, Any]:
         "extra_auth_success": 1 if session.auth_success else 0,
         "extra_tcpip_forwards": len(session.tcpip_requests),
         "extra_dst_port": session.dst_port,
+
+        # v3: credential and scanner flags
+        "extra_password_equals_username": 1 if _password_equals_username(session) else 0,
+        "extra_ssh_family_is_scanner": 1 if ssh_family in ("nmap", "masscan") else 0,
     }
     
     return features
@@ -159,16 +163,31 @@ def _encode_ssh_family(family: str) -> int:
 
 
 # Common passwords seen in honeypot attacks
-# This is a small sample - in production you'd load from a file
+# Top-100 from honeypot research plus common defaults
 COMMON_PASSWORDS = {
+    # classics
     "admin", "password", "123456", "12345678", "root", "toor",
     "admin123", "password123", "letmein", "welcome", "monkey",
     "dragon", "master", "qwerty", "login", "pass", "test",
     "guest", "administrator", "changeme", "1234", "12345",
     "123456789", "1234567890", "abc123", "111111", "123123",
+    # OS defaults
     "ubuntu", "debian", "centos", "raspberry", "pi", "default",
+    "alpine", "fedora", "redhat", "vagrant",
+    # service accounts
     "support", "user", "backup", "oracle", "mysql", "postgres",
     "ftpuser", "ftp", "www", "web", "apache", "nginx",
+    # more common weak passwords
+    "password1", "iloveyou", "sunshine", "princess", "football",
+    "shadow", "michael", "trustno1", "baseball", "access",
+    "hello", "charlie", "donald", "passw0rd", "whatever",
+    "qazwsx", "654321", "jordan23", "harley", "password1!",
+    "1q2w3e4r", "000000", "121212", "666666", "888888",
+    "p@ssw0rd", "p@ssword", "pass123", "test123", "qwerty123",
+    # honeypot favorites
+    "1qaz2wsx", "zaq12wsx", "system", "manager", "service",
+    "superuser", "server", "demo", "temp", "setup",
+    "master123", "linux", "tomcat", "jenkins", "redis",
 }
 
 
@@ -177,3 +196,15 @@ def _is_common_password(password: str | None) -> bool:
     if not password:
         return False
     return password.lower() in COMMON_PASSWORDS
+
+
+def _password_equals_username(session: Session) -> bool:
+    """
+    Check if the password matches the username (root:root, admin:admin, etc.).
+    This is such a common brute-force pattern it deserves its own flag.
+    """
+    username = session.final_username
+    password = session.final_password
+    if not username or not password:
+        return False
+    return username.lower() == password.lower()
