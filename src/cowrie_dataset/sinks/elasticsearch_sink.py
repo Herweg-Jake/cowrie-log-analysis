@@ -351,7 +351,7 @@ class ElasticsearchSink:
         for doc in self._buffer:
             action = {
                 "_index": self.index_name,
-                "_id": doc.get("session_id", None),  # use session_id as doc ID
+                "_id": f"{doc.get('session_id', '')}_{doc.get('timing', {}).get('start_ts', '')}",
                 "_source": doc,
             }
             actions.append(action)
