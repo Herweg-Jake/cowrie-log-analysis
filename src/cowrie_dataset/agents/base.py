@@ -9,6 +9,7 @@ Supports Anthropic, OpenAI, and Gemini APIs.
 
 import os
 import re
+import threading
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -36,8 +37,8 @@ class AgentConfig:
     max_tokens: int = 1024
     temperature: float = 0.1  # low = consistent, high = creative
 
-    # rate limits vary by provider/tier - gemini free is strict (15 RPM)
-    requests_per_minute: int = 15
+    # rate limits - 500 RPM gives good throughput with headroom under the 1K API limit
+    requests_per_minute: int = 500
     retry_attempts: int = 3
     retry_delay: float = 2.0  # gemini needs longer backoff
 
@@ -63,11 +64,11 @@ class AgentConfig:
 
 # handy presets so you don't have to remember all the params
 def gemini_flash_config(**overrides) -> AgentConfig:
-    """Free tier Gemini 2.0 Flash - good for testing, strict rate limits."""
+    """Gemini 2.0 Flash - fast and cheap, 500 RPM with headroom under 1K limit."""
     return AgentConfig(
         provider="gemini",
         model="gemini-2.0-flash",
-        requests_per_minute=15,  # free tier limit
+        requests_per_minute=500,
         input_cost_per_1k=0.0,
         output_cost_per_1k=0.0,
         **overrides,
@@ -134,6 +135,7 @@ class BaseAgent(ABC):
         self.config = config
         self._client = None
         self._request_times: list[float] = []
+        self._rate_lock = threading.Lock()
 
     @property
     @abstractmethod
@@ -179,18 +181,20 @@ class BaseAgent(ABC):
         return self._client
 
     def _wait_for_rate_limit(self) -> None:
-        """Simple sliding window rate limiter."""
-        now = time.time()
-        # drop requests older than 60s
-        self._request_times = [t for t in self._request_times if now - t < 60]
+        """Thread-safe sliding window rate limiter."""
+        while True:
+            with self._rate_lock:
+                now = time.time()
+                self._request_times = [t for t in self._request_times if now - t < 60]
 
-        if len(self._request_times) >= self.config.requests_per_minute:
-            # need to wait until oldest request falls out of the window
-            sleep_for = 60 - (now - self._request_times[0])
-            if sleep_for > 0:
-                time.sleep(sleep_for)
+                if len(self._request_times) < self.config.requests_per_minute:
+                    self._request_times.append(now)
+                    return
 
-        self._request_times.append(time.time())
+                sleep_for = 60 - (now - self._request_times[0]) + 0.1
+
+            # sleep outside the lock so other threads aren't blocked
+            time.sleep(sleep_for)
 
     def _parse_retry_delay(self, error: Exception) -> Optional[float]:
         """
