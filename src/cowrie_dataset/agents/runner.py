@@ -9,6 +9,7 @@ Flow:
 5. Return combined results
 """
 
+import threading
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -100,6 +101,7 @@ class AgentRunner:
         self.analyst = AnalystAgent(analyst_config or base_config)
 
         self.stats = AgentRunnerStats()
+        self._stats_lock = threading.Lock()
 
     def process(self, session: dict) -> AgentPipelineResult:
         """
@@ -108,7 +110,6 @@ class AgentRunner:
         Returns an AgentPipelineResult with whatever we learned.
         """
         session_id = session.get("session_id", "unknown")
-        self.stats.sessions_processed += 1
 
         result = AgentPipelineResult(
             session_id=session_id,
@@ -124,24 +125,26 @@ class AgentRunner:
         if not is_anomaly and self.skip_non_anomalous:
             # nothing to do - just use rule-based labels
             result.labels_agentic = {"skipped": True, "reason": "not anomalous"}
+            with self._stats_lock:
+                self.stats.sessions_processed += 1
             return result
-
-        self.stats.sessions_anomalous += 1
 
         # step 1: hunter triage
         result.sent_to_hunter = True
-        self.stats.sent_to_hunter += 1
-
         hunter_resp = self.hunter.analyze(session)
         result.hunter_response = hunter_resp
         result.total_latency_ms += hunter_resp.latency_ms
         result.total_cost += hunter_resp.estimated_cost
-        self.stats.total_latency_ms += hunter_resp.latency_ms
-        self.stats.total_cost += hunter_resp.estimated_cost
 
         if not hunter_resp.success:
-            self.stats.errors += 1
             result.labels_agentic = {"error": hunter_resp.error, "stage": "hunter"}
+            with self._stats_lock:
+                self.stats.sessions_processed += 1
+                self.stats.sessions_anomalous += 1
+                self.stats.sent_to_hunter += 1
+                self.stats.total_latency_ms += hunter_resp.latency_ms
+                self.stats.total_cost += hunter_resp.estimated_cost
+                self.stats.errors += 1
             return result
 
         verdict = hunter_resp.result.get("verdict", "NOISE")
@@ -156,29 +159,37 @@ class AgentRunner:
                 "hunter_reasoning": hunter_resp.result.get("reasoning", ""),
                 "analyst_verdict": None,
             }
+            with self._stats_lock:
+                self.stats.sessions_processed += 1
+                self.stats.sessions_anomalous += 1
+                self.stats.sent_to_hunter += 1
+                self.stats.total_latency_ms += hunter_resp.latency_ms
+                self.stats.total_cost += hunter_resp.estimated_cost
             return result
-
-        self.stats.marked_relevant += 1
 
         # step 2: analyst deep dive
         result.sent_to_analyst = True
-        self.stats.sent_to_analyst += 1
-
         analyst_resp = self.analyst.analyze(session)
         result.analyst_response = analyst_resp
         result.total_latency_ms += analyst_resp.latency_ms
         result.total_cost += analyst_resp.estimated_cost
-        self.stats.total_latency_ms += analyst_resp.latency_ms
-        self.stats.total_cost += analyst_resp.estimated_cost
 
         if not analyst_resp.success:
-            self.stats.errors += 1
             result.labels_agentic = {
                 "is_anomaly": True,
                 "hunter_verdict": "RELEVANT",
                 "error": analyst_resp.error,
                 "stage": "analyst",
             }
+            with self._stats_lock:
+                self.stats.sessions_processed += 1
+                self.stats.sessions_anomalous += 1
+                self.stats.sent_to_hunter += 1
+                self.stats.marked_relevant += 1
+                self.stats.sent_to_analyst += 1
+                self.stats.total_latency_ms += hunter_resp.latency_ms + analyst_resp.latency_ms
+                self.stats.total_cost += hunter_resp.estimated_cost + analyst_resp.estimated_cost
+                self.stats.errors += 1
             return result
 
         # combine everything
@@ -200,6 +211,15 @@ class AgentRunner:
             },
         }
 
+        with self._stats_lock:
+            self.stats.sessions_processed += 1
+            self.stats.sessions_anomalous += 1
+            self.stats.sent_to_hunter += 1
+            self.stats.marked_relevant += 1
+            self.stats.sent_to_analyst += 1
+            self.stats.total_latency_ms += hunter_resp.latency_ms + analyst_resp.latency_ms
+            self.stats.total_cost += hunter_resp.estimated_cost + analyst_resp.estimated_cost
+
         return result
 
     def get_stats(self) -> dict:
@@ -214,6 +234,6 @@ class AgentRunner:
             "total_latency_ms": s.total_latency_ms,
             "total_cost_usd": round(s.total_cost, 4),
             "errors": s.errors,
-            "avg_latency_ms": s.total_latency_ms / s.sessions_anomalous if s.sessions_anomalous else 0,
-            "avg_cost_usd": s.total_cost / s.sessions_anomalous if s.sessions_anomalous else 0,
+            "avg_latency_per_session_ms": s.total_latency_ms / s.sessions_anomalous if s.sessions_anomalous else 0,
+            "avg_cost_per_session_usd": s.total_cost / s.sessions_anomalous if s.sessions_anomalous else 0,
         }

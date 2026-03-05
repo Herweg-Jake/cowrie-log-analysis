@@ -12,11 +12,16 @@ Usage:
 
     # Dry run (no API calls)
     python scripts/run_agent_pipeline.py --input sessions.jsonl --output labeled.jsonl --dry-run
+
+    # Crank up concurrency (default 50, max bounded by your RPM limit)
+    python scripts/run_agent_pipeline.py --input sessions.jsonl --output labeled.jsonl --concurrency 80
 """
 
 import argparse
 import json
 import os
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 try:
@@ -37,6 +42,13 @@ from cowrie_dataset.anomaly.statistical_detector import (
 from cowrie_dataset.agents import AgentConfig, AgentRunner
 
 
+def process_session(runner, session):
+    """Process a single session through the pipeline. Runs in a worker thread."""
+    result = runner.process(session)
+    session["labels_agentic"] = result.to_dict()
+    return session, result
+
+
 def main():
     parser = argparse.ArgumentParser(description="Run agent pipeline")
     parser.add_argument("--input", "-i", required=True, help="Input JSONL file")
@@ -46,6 +58,8 @@ def main():
     parser.add_argument("--model", default="claude-sonnet-4-20250514")
     parser.add_argument("--dry-run", action="store_true", help="Skip API calls")
     parser.add_argument("--limit", type=int, help="Limit number of sessions")
+    parser.add_argument("--concurrency", type=int, default=50,
+                        help="Number of concurrent API requests (default 50)")
     parser.add_argument("--skip-non-anomalous", action="store_true", default=True,
                         help="Only process sessions flagged as statistical anomalies")
     args = parser.parse_args()
@@ -65,13 +79,15 @@ def main():
     else:
         config = AgentConfig(model=args.model)
         runner = AgentRunner(config=config, skip_non_anomalous=args.skip_non_anomalous)
+        print(f"Using {config.model} with {config.requests_per_minute} RPM limit, "
+              f"{args.concurrency} concurrent workers")
 
     # Count input lines
     input_path = Path(args.input)
     if not input_path.exists():
         print(f"Error: Input file not found: {input_path}")
         return 1
-    
+
     line_count = sum(1 for _ in open(input_path))
     if args.limit:
         line_count = min(line_count, args.limit)
@@ -83,53 +99,99 @@ def main():
     processed = 0
     anomalous_count = 0
     relevant_count = 0
+    write_lock = threading.Lock()
 
     with open(input_path) as f_in, open(output_path, 'w') as f_out:
-        for i, line in enumerate(tqdm(f_in, total=line_count)):
-            if args.limit and i >= args.limit:
-                break
+        pbar = tqdm(total=line_count)
 
-            session = json.loads(line)
+        if not runner:
+            # Dry run - no concurrency needed
+            for i, line in enumerate(f_in):
+                if args.limit and i >= args.limit:
+                    break
 
-            # Add anomaly flag if detector available
-            if detector:
-                session = add_anomaly_flag(session, detector)
-            else:
-                # Flag everything as anomalous for testing
-                session["statistical_anomaly"] = {
-                    "is_anomaly": True,
-                    "score": 0.0,
-                    "reasons": ["No detector - flagging all"],
-                    "z_scores": {},
-                }
+                session = json.loads(line)
 
-            # Track anomalies
-            if session.get("statistical_anomaly", {}).get("is_anomaly", False):
-                anomalous_count += 1
+                if detector:
+                    session = add_anomaly_flag(session, detector)
+                else:
+                    session["statistical_anomaly"] = {
+                        "is_anomaly": True,
+                        "score": 0.0,
+                        "reasons": ["No detector - flagging all"],
+                        "z_scores": {},
+                    }
 
-            # Run agent pipeline
-            if runner:
-                result = runner.process(session)
-                session["labels_agentic"] = result.to_dict()
-                
-                # Track relevant sessions
-                if result.hunter_verdict == "RELEVANT":
-                    relevant_count += 1
-            else:
-                # Dry run - add placeholder
+                if session.get("statistical_anomaly", {}).get("is_anomaly", False):
+                    anomalous_count += 1
+
                 session["labels_agentic"] = {
                     "dry_run": True,
                     "was_anomaly": session.get("statistical_anomaly", {}).get("is_anomaly", False),
                 }
 
-            # Write output
-            f_out.write(json.dumps(session) + '\n')
-            processed += 1
+                f_out.write(json.dumps(session) + '\n')
+                processed += 1
+                pbar.update(1)
+        else:
+            # Concurrent processing - fire off API calls in parallel
+            pending = set()
+
+            def handle_result(future):
+                """Write result and update counters when a future completes."""
+                nonlocal processed, relevant_count
+                try:
+                    session_out, result = future.result()
+                    with write_lock:
+                        f_out.write(json.dumps(session_out) + '\n')
+                    if result.hunter_verdict == "RELEVANT":
+                        relevant_count += 1
+                    processed += 1
+                except Exception as e:
+                    processed += 1
+                    print(f"\nError processing session: {e}")
+                pbar.update(1)
+
+            with ThreadPoolExecutor(max_workers=args.concurrency) as executor:
+                for i, line in enumerate(f_in):
+                    if args.limit and i >= args.limit:
+                        break
+
+                    session = json.loads(line)
+
+                    if detector:
+                        session = add_anomaly_flag(session, detector)
+                    else:
+                        session["statistical_anomaly"] = {
+                            "is_anomaly": True,
+                            "score": 0.0,
+                            "reasons": ["No detector - flagging all"],
+                            "z_scores": {},
+                        }
+
+                    if session.get("statistical_anomaly", {}).get("is_anomaly", False):
+                        anomalous_count += 1
+
+                    future = executor.submit(process_session, runner, session)
+                    pending.add(future)
+
+                    # drain completed futures to keep memory bounded
+                    if len(pending) >= args.concurrency * 2:
+                        done = {f for f in pending if f.done()}
+                        for f in done:
+                            handle_result(f)
+                        pending -= done
+
+                # flush remaining futures
+                for f in as_completed(pending):
+                    handle_result(f)
+
+        pbar.close()
 
     print(f"\n{'='*60}")
     print(f"Processed {processed} sessions")
     print(f"Anomalous sessions: {anomalous_count}")
-    
+
     if args.dry_run:
         print("\nDRY RUN complete - no API calls were made")
         print(f"Output written to: {output_path}")
@@ -143,10 +205,10 @@ def main():
         print(f"  Total cost: ${stats['total_cost_usd']:.4f}")
         print(f"  Avg latency: {stats['avg_latency_per_session_ms']:.0f}ms")
         print(f"  Errors: {stats['errors']}")
-    
+
     print(f"\nOutput written to: {output_path}")
     print(f"{'='*60}")
-    
+
     return 0
 
 
