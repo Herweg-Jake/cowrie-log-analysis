@@ -55,7 +55,7 @@ def main():
     parser.add_argument("--output", "-o", required=True, help="Output JSONL file")
     parser.add_argument("--anomaly-stats", help="Pre-trained anomaly detector stats")
     parser.add_argument("--z-threshold", type=float, default=3.0)
-    parser.add_argument("--model", default="claude-sonnet-4-20250514")
+    parser.add_argument("--model", default=None, help="Override model (defaults to AgentConfig default)")
     parser.add_argument("--dry-run", action="store_true", help="Skip API calls")
     parser.add_argument("--limit", type=int, help="Limit number of sessions")
     parser.add_argument("--concurrency", type=int, default=50,
@@ -77,7 +77,7 @@ def main():
         print("DRY RUN - no API calls will be made")
         runner = None
     else:
-        config = AgentConfig(model=args.model)
+        config = AgentConfig(**({"model": args.model} if args.model else {}))
         runner = AgentRunner(config=config, skip_non_anomalous=args.skip_non_anomalous)
         print(f"Using {config.model} with {config.requests_per_minute} RPM limit, "
               f"{args.concurrency} concurrent workers")
