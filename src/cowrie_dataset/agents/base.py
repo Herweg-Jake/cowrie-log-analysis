@@ -26,7 +26,7 @@ class AgentConfig:
     """
 
     provider: str = "gemini"  # "anthropic", "openai", or "gemini"
-    model: str = "gemini-2.0-flash"  # 1.5 is deprecated, 2.0 is current
+    model: str = "gemini-2.5-flash"  # 2.0 retired, 2.5 is current
     api_key: Optional[str] = None
 
     # Vertex AI settings (uses Google Cloud credits instead of free tier)
@@ -64,10 +64,10 @@ class AgentConfig:
 
 # handy presets so you don't have to remember all the params
 def gemini_flash_config(**overrides) -> AgentConfig:
-    """Gemini 2.0 Flash - fast and cheap, 500 RPM with headroom under 1K limit."""
+    """Gemini 2.5 Flash - fast and cheap, 500 RPM with headroom under 1K limit."""
     return AgentConfig(
         provider="gemini",
-        model="gemini-2.0-flash",
+        model="gemini-2.5-flash",
         requests_per_minute=500,
         input_cost_per_1k=0.0,
         output_cost_per_1k=0.0,
