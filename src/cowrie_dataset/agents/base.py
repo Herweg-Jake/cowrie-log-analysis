@@ -55,7 +55,7 @@ class AgentConfig:
             elif self.provider == "openai":
                 self.api_key = os.environ.get("OPENAI_API_KEY")
             else:  # gemini
-                self.api_key = os.environ.get("GOOGLE_API_KEY")
+                self.api_key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
 
         # Vertex AI project from env (uses Google Cloud credits)
         if self.project_id is None:
