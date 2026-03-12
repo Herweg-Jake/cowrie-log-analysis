@@ -40,31 +40,130 @@ from cowrie_dataset.config import Settings
 def compute_label_comparison(rule_labels: dict, agent_labels: dict) -> dict:
     """
     Compute comparison metrics between rule-based and agentic labels.
-    
+
     Returns dict with comparison flags for Kibana filtering.
     """
     # Get levels
     rule_level = rule_labels.get("level")
-    
+
     analyst_verdict = agent_labels.get("analyst_verdict")
     agent_level = analyst_verdict.get("level") if analyst_verdict else None
-    
+
     # Get tactics
     rule_tactic = rule_labels.get("primary_tactic", "").lower()
     agent_tactic = ""
     if analyst_verdict:
         agent_tactic = analyst_verdict.get("primary_tactic", "").lower()
-    
+
     return {
         "tactics_agree": rule_tactic == agent_tactic if agent_tactic else None,
         "levels_agree": rule_level == agent_level if agent_level else None,
         "rule_level": rule_level,
         "agent_level": agent_level,
         "level_difference": (
-            abs(rule_level - agent_level) 
+            abs(rule_level - agent_level)
             if rule_level is not None and agent_level is not None else None
         ),
     }
+
+
+def normalize_doc_for_es(doc: dict) -> dict:
+    """
+    Reshape a flat exported session into the nested structure expected by
+    the Elasticsearch index mapping.
+
+    The session exporter produces a flat format (start_ts, src_ip at top level),
+    but the ES mapping expects nested objects (timing.start_ts, connection.src_ip, etc.).
+    This function bridges that gap.
+    """
+    # If the doc already has nested 'timing' structure, assume it's already normalized
+    if "timing" in doc and isinstance(doc["timing"], dict):
+        return doc
+
+    normalized = {}
+
+    # Core identifiers (stay at top level)
+    for key in ("session_id", "location", "features",
+                "labels_rule_based", "labels_agentic", "label_comparison",
+                "statistical_anomaly"):
+        if key in doc:
+            normalized[key] = doc[key]
+
+    # Timing (flatten -> nest)
+    normalized["timing"] = {
+        "start_ts": doc.get("start_ts"),
+        "end_ts": doc.get("end_ts"),
+        "duration_s": doc.get("duration_s"),
+    }
+
+    # Connection
+    normalized["connection"] = {
+        "src_ip": doc.get("src_ip"),
+        "src_port": doc.get("src_port"),
+        "dst_port": doc.get("dst_port"),
+        "protocol": doc.get("protocol"),
+    }
+
+    # Client
+    normalized["client"] = {
+        "ssh_version": doc.get("ssh_version"),
+        "hassh": doc.get("hassh"),
+    }
+
+    # Authentication
+    login_attempts = doc.get("login_attempts", [])
+    normalized["authentication"] = {
+        "attempts": len(login_attempts),
+        "success": doc.get("auth_success", False),
+        "failed_count": sum(1 for a in login_attempts if not a.get("success")),
+        "success_count": sum(1 for a in login_attempts if a.get("success")),
+        "usernames_tried": list({a.get("username", "") for a in login_attempts}),
+        "final_username": doc.get("final_username"),
+        "final_password": doc.get("final_password"),
+    }
+
+    # Commands
+    commands = doc.get("commands", [])
+    inputs = [c.get("input", "") if isinstance(c, dict) else c for c in commands]
+    normalized["commands"] = {
+        "total_count": len(commands),
+        "success_count": sum(
+            1 for c in commands if isinstance(c, dict) and c.get("success", True)
+        ),
+        "failed_count": sum(
+            1 for c in commands if isinstance(c, dict) and not c.get("success", True)
+        ),
+        "inputs": inputs,
+        "unique_commands": len(set(inputs)),
+    }
+
+    # Downloads
+    downloads = doc.get("downloads", [])
+    normalized["downloads"] = {
+        "count": len(downloads),
+        "urls": [d.get("url", "") for d in downloads if isinstance(d, dict)],
+        "shasums": [d.get("shasum", "") for d in downloads if isinstance(d, dict) and d.get("shasum")],
+    }
+
+    # Uploads
+    uploads = doc.get("uploads", [])
+    normalized["uploads"] = {
+        "count": len(uploads),
+    }
+
+    # Geo
+    geo = doc.get("geo", {})
+    if geo:
+        normalized["geo"] = geo
+
+    # Metadata
+    normalized["meta"] = {
+        "event_count": doc.get("event_count", 0),
+        "session_type": doc.get("session_type"),
+        "ingested_at": doc.get("ingested_at"),
+    }
+
+    return normalized
 
 
 def main():
@@ -127,15 +226,18 @@ def main():
                     break
                 
                 doc = json.loads(line)
-                
+
                 # Add label comparison if both labels exist
                 rule_labels = doc.get("labels_rule_based", {})
                 agent_labels = doc.get("labels_agentic", {})
-                
+
                 if rule_labels and agent_labels and agent_labels.get("analyst_verdict"):
                     doc["label_comparison"] = compute_label_comparison(rule_labels, agent_labels)
                     comparisons_added += 1
-                
+
+                # Reshape flat export format into nested ES mapping structure
+                doc = normalize_doc_for_es(doc)
+
                 sink.add(doc)
                 indexed += 1
         
