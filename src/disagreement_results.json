@@ -1,0 +1,2037 @@
+{
+  "summary": {
+    "total_sessions": 11711491,
+    "anomalous": 44280,
+    "hunter_processed": 41009,
+    "hunter_errored": 3271,
+    "hunter_noise": 33115,
+    "hunter_relevant": 7894,
+    "analyst_processed": 7575,
+    "dual_labeled": 7575
+  },
+  "agreement": {
+    "tactic_agreement_rate": 0.40594059405940597,
+    "tactic_agree": 3075,
+    "tactic_disagree": 4500,
+    "level_agreement_rate": 0.4258745874587459,
+    "level_agree": 3226,
+    "level_disagree": 4349
+  },
+  "hypotheses": {
+    "H1_tactic_disagreement_rate": 0.594059405940594,
+    "H2_agent_only_detections": 50,
+    "H2_agent_only_rate": 0.006600660066006601,
+    "H3_hunter_filter_rate": 0.8075056694871857,
+    "H5_sophistication_distribution": {
+      "SCRIPT_KIDDIE": 6620,
+      "INTERMEDIATE": 799,
+      "UNKNOWN": 156
+    }
+  },
+  "distributions": {
+    "rule_tactic": {
+      "Discovery": 2973,
+      "Command and Control": 2852,
+      "No Action": 949,
+      "Unknown Activity (Low)": 378,
+      "Unknown Activity (High)": 217,
+      "Impact": 71,
+      "Execution": 68,
+      "Persistence": 48,
+      "Resource Hijacking": 13,
+      "Credential Access": 3,
+      "Privilege Escalation": 3
+    },
+    "agent_tactic": {
+      "Initial Access": 3420,
+      "Discovery": 1953,
+      "Command and Control": 1206,
+      "Execution": 513,
+      "Unknown": 156,
+      "Persistence": 156,
+      "Ingress Tool Transfer": 137,
+      "Impact": 21,
+      "Defense Evasion": 11,
+      "Privilege Escalation": 2
+    },
+    "rule_level": {
+      "1": 3004,
+      "2": 54,
+      "3": 4517
+    },
+    "agent_level": {
+      "1": 3381,
+      "2": 3519,
+      "3": 675
+    },
+    "hunter_verdicts": {
+      "NOISE": 33115,
+      "RELEVANT": 7894
+    }
+  },
+  "confusion_matrices": {
+    "level": {
+      "1": {
+        "1": 2511,
+        "2": 490,
+        "3": 3
+      },
+      "2": {
+        "1": 11,
+        "2": 43
+      },
+      "3": {
+        "3": 672,
+        "2": 2986,
+        "1": 859
+      }
+    },
+    "tactic": {
+      "Command and Control": {
+        "Initial Access": 1098,
+        "Execution": 342,
+        "Ingress Tool Transfer": 137,
+        "Unknown": 71
+      },
+      "Discovery": {
+        "Initial Access": 1161,
+        "Execution": 1,
+        "Persistence": 1,
+        "Unknown": 1
+      },
+      "No Action": {
+        "Initial Access": 837,
+        "Execution": 67,
+        "Unknown": 39,
+        "Persistence": 4,
+        "Command and Control": 1
+      },
+      "Unknown Activity (Low)": {
+        "Initial Access": 254,
+        "Discovery": 107,
+        "Execution": 10,
+        "Impact": 2,
+        "Unknown": 2
+      },
+      "Unknown Activity (High)": {
+        "Persistence": 98,
+        "Unknown": 42,
+        "Initial Access": 38,
+        "Execution": 37,
+        "Discovery": 2
+      },
+      "Impact": {
+        "Persistence": 48,
+        "Initial Access": 5,
+        "Execution": 4,
+        "Discovery": 2,
+        "Command and Control": 1
+      },
+      "Persistence": {
+        "Discovery": 32,
+        "Defense Evasion": 9,
+        "Initial Access": 7
+      },
+      "Execution": {
+        "Initial Access": 13,
+        "Impact": 3,
+        "Persistence": 1,
+        "Discovery": 1,
+        "Unknown": 1
+      },
+      "Resource Hijacking": {
+        "Impact": 5,
+        "Initial Access": 5,
+        "Execution": 3
+      },
+      "Credential Access": {
+        "Persistence": 2,
+        "Initial Access": 1
+      },
+      "Privilege Escalation": {
+        "Initial Access": 1
+      }
+    }
+  },
+  "samples": {
+    "tactic_disagreements": [
+      {
+        "session_id": "57bca222",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "An attacker successfully logged into the honeypot using default SSH credentials (pi:raspberryraspberry993311). Immediately after gaining access, they uploaded a file (indicated by 'Downloads' from 'stdin'). This suggests an automated attempt to establish a foothold or deploy a payload without further interaction or reconnaissance.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "2cc06f64",
+        "rule_tactic": "Unknown Activity (Low)",
+        "agent_tactic": "Discovery",
+        "agent_reasoning": "The attacker successfully logged in using common default credentials (root:root). They executed a single command, `/ip cloud print`, which is specific to MikroTik RouterOS for system information discovery. No further malicious actions, C2, or persistence attempts were observed, indicating a low-sophistication, likely automated reconnaissance attempt targeting MikroTik devices.",
+        "agent_confidence": 0.9,
+        "commands": [
+          {
+            "timestamp": "2020-04-18 15:57:43.852372+00:00",
+            "input": "/ip cloud print",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "81ffe55a",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (T1078.001). Immediately after gaining access, they uploaded a file (indicated by 'url: \"stdin\"') without executing any commands, suggesting an automated attempt to deliver a malicious payload for execution (T1059) or to establish persistence on the compromised system.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "aaa3c87e",
+        "rule_tactic": "Unknown Activity (Low)",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully logged in using the common default credentials 'root:root' (T1078.001). They then executed a single command, '/ip cloud print' (T1059.004), which is specific to MikroTik RouterOS for displaying cloud configuration (T1082). This suggests a script-kiddie level attacker or automated script attempting to identify and potentially exploit MikroTik devices, failing to adapt when the honeypot was not the intended target.",
+        "agent_confidence": 1.0,
+        "commands": [
+          {
+            "timestamp": "2020-04-18 01:46:19.013177+00:00",
+            "input": "/ip cloud print",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "4a6bbd20",
+        "rule_tactic": "Unknown Activity (Low)",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The session shows successful authentication with known credentials (ts3:12), indicating initial access. The subsequent commands are mostly mistyped or incomplete, such as 'c', 'ear', and 'closs', suggesting a low-skill attacker. The command 'remove boot' clearly indicates an intent for data destruction, even if poorly executed. The lack of successful follow-through or advanced techniques points to a script kiddie attempting disruptive actions.",
+        "agent_confidence": 0.9,
+        "commands": [
+          {
+            "timestamp": "2020-04-19 03:21:42.194373+00:00",
+            "input": "c",
+            "success": false
+          },
+          {
+            "timestamp": "2020-04-19 03:21:42.196529+00:00",
+            "input": "ear",
+            "success": false
+          },
+          {
+            "timestamp": "2020-04-19 03:22:51.812926+00:00",
+            "input": "restart",
+            "success": false
+          },
+          {
+            "timestamp": "2020-04-19 03:23:26.759741+00:00",
+            "input": "remove boot",
+            "success": false
+          },
+          {
+            "timestamp": "2020-04-19 03:23:29.716457+00:00",
+            "input": "closs",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "3cbc4397",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "An attacker successfully authenticated to the honeypot using common default credentials ('pi'/'raspberryraspberry993311') for a Raspberry Pi. Immediately after authentication, a file was uploaded to the system (indicated by 'url: stdin' in the downloads section), likely via SCP or SFTP, without executing any shell commands. This behavior suggests an automated script attempting to drop a malicious payload for subsequent execution or to establish persistence.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "1aa42088",
+        "rule_tactic": "Execution",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully gained root access using default credentials (root:root), indicating a critical initial compromise. They then immediately attempted to execute a file named 'index.html' using a shell command, which is a common pattern for malware droppers. The preceding 'while' loop might have been part of a larger script or a rudimentary attempt to keep the session alive. The absence of any downloads suggests their intended payload delivery mechanism failed.",
+        "agent_confidence": 0.9,
+        "commands": [
+          {
+            "timestamp": "2020-04-19 13:00:38.500674+00:00",
+            "input": "while [ -d /proc/$PPID ]",
+            "success": false
+          },
+          {
+            "timestamp": "2020-04-19 13:00:38.503079+00:00",
+            "input": "do sleep 1",
+            "success": false
+          },
+          {
+            "timestamp": "2020-04-19 13:00:48.778010+00:00",
+            "input": "./index.html",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": [
+          "direct_execute"
+        ]
+      },
+      {
+        "session_id": "00bb72ac",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry), indicating a basic attack method. They then transferred a file to the honeypot (Ingress Tool Transfer, T1105) without executing any further commands. This suggests an automated script or a simple, interrupted attempt to stage a payload for future malicious activity.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "752304a8",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (`pi:raspberryraspberry993311`). Immediately after gaining access, a file was uploaded to the honeypot (Ingress Tool Transfer). While no commands were executed within this session, the file upload strongly suggests an attempt to establish persistence or deliver a payload for later execution.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "e33328fc",
+        "rule_tactic": "Unknown Activity (Low)",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated with common default credentials (usuario:usuario), indicating a basic brute-force or credential stuffing attempt. They then executed 'ss' for network discovery and an incomplete './' command, likely an attempt to execute a local script or binary. The lack of further complex commands or downloads suggests a low-sophistication attacker probing for easy targets.",
+        "agent_confidence": 0.9,
+        "commands": [
+          {
+            "timestamp": "2020-04-22 01:48:37.208727+00:00",
+            "input": "ss",
+            "success": false
+          },
+          {
+            "timestamp": "2020-04-22 01:48:48.631682+00:00",
+            "input": "./",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "ef693afc",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "An automated attacker successfully authenticated using common default credentials (pi:raspberryraspberry993311). Although no explicit commands were logged, a file was 'downloaded' via stdin, indicating an an attempt to deliver a payload directly through the SSH channel. This suggests an intent to execute malicious code, likely to establish persistence or further compromise the system, even if the execution itself wasn't observed.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "252fabee",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry), indicating a successful Initial Access (T1078.001). Immediately after authentication, a file was downloaded directly via stdin, which is a method often used by automated scripts to deliver payloads (Execution - T1059) without leaving explicit command history. This suggests an attempt to compromise the system, likely for botnet recruitment or cryptocurrency mining, with the intent to establish Persistence and Command and Control.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "6082db25",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using SSH with the 'pi' user and a specific password. Immediately after authentication, a file was 'downloaded' from stdin, indicating a payload was pushed to the system. The lack of further commands and the short duration suggest an automated script or a very basic, non-interactive attempt to drop malware.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "1c3fd86a",
+        "rule_tactic": "Execution",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated via SSH using weak credentials. They then attempted basic system discovery by trying common package managers (`yum`, `apt`) and tried to execute non-existent commands or install a non-existent package ('cpu'). The lack of successful payload delivery or further system compromise, combined with the generic and often incorrect commands, indicates a low level of sophistication.",
+        "agent_confidence": 0.9,
+        "commands": [
+          {
+            "timestamp": "2020-04-22 01:48:20.929213+00:00",
+            "input": "while [ -d /proc/$PPID ]",
+            "success": false
+          },
+          {
+            "timestamp": "2020-04-22 01:48:20.931741+00:00",
+            "input": "do sleep 1",
+            "success": false
+          },
+          {
+            "timestamp": "2020-04-22 01:48:32.506478+00:00",
+            "input": "while [ -d /proc/$PPID ]",
+            "success": false
+          },
+          {
+            "timestamp": "2020-04-22 01:48:32.508657+00:00",
+            "input": "do sleep 1",
+            "success": false
+          },
+          {
+            "timestamp": "2020-04-22 01:48:58.994253+00:00",
+            "input": "while [ -d /proc/$PPID ]",
+            "success": false
+          },
+          {
+            "timestamp": "2020-04-22 01:48:58.996413+00:00",
+            "input": "do sleep 1",
+            "success": false
+          },
+          {
+            "timestamp": "2020-04-22 01:49:17.270868+00:00",
+            "input": "./",
+            "success": false
+          },
+          {
+            "timestamp": "2020-04-22 01:49:19.876591+00:00",
+            "input": "yum",
+            "success": false
+          },
+          {
+            "timestamp": "2020-04-22 01:49:21.886354+00:00",
+            "input": "apt",
+            "success": false
+          },
+          {
+            "timestamp": "2020-04-22 01:49:50.158266+00:00",
+            "input": "/x86: command not found",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": [
+          "source_script"
+        ]
+      },
+      {
+        "session_id": "2fd87df1",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated to the honeypot using valid credentials (pi:raspberryraspberry993311), indicating a targeted attempt or use of leaked credentials for Raspberry Pi devices. Immediately after authentication, a file was uploaded to the honeypot (indicated by the 'downloads' section with 'url: stdin'), strongly suggesting the intent to deploy and execute a malicious payload. The lack of further commands implies an automated or pre-scripted action.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "de4629d8",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials ('pi:raspberryraspberry993311'). Immediately after login, a file was downloaded via 'stdin', indicating an automated payload delivery attempt. This suggests an automated scanner or script kiddie trying to compromise vulnerable systems by pushing a malicious file.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "89dc1b10",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry) and immediately uploaded a file (indicated by 'stdin' download) without executing any interactive commands. This behavior is highly indicative of an automated script or botnet attempting to compromise the system by dropping a payload for later execution.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "dcf42dbb",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry), indicating a credential stuffing or brute-force attempt against common IoT/Raspberry Pi setups. Immediately after authentication, a file was downloaded to the system. While no explicit execution commands were observed in this session, the presence of a downloaded file strongly suggests an intent to establish persistence or execute a malicious payload (e.g., a bot, miner, or backdoor). The lack of further interaction might indicate an automated script or a multi-stage attack.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "6708b586",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "An attacker successfully authenticated using common default credentials for Raspberry Pi. Immediately after login, a payload was delivered via 'stdin' without any explicit commands being logged, indicating an automated attempt to push and likely execute a script or binary. The short duration and lack of interactive commands suggest a bot or automated script.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "a4654f85",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default Raspberry Pi credentials (`pi:raspberryraspberry993311`). Immediately after gaining access, they uploaded a file via `stdin` (likely `scp` or `sftp`), indicating an attempt to deploy malware or a tool for further compromise and persistence, without executing any commands post-login. This behavior is typical of automated scans leveraging known weak credentials.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "e0bb2dea",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Unknown",
+        "agent_reasoning": "couldn't parse response: ```json\n{\n  \"threat_level\": 2,\n  \"primary_tactic\": \"Initial Access\",\n  \"all_tactics\": [\"Initial Acce...",
+        "agent_confidence": 0.0,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "914171d3",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry), indicating a brute-force or credential stuffing attack. Immediately after login, a file was downloaded via stdin without any explicit commands, strongly suggesting an automated script or tool piping a malicious payload for execution. This is a clear attempt to establish a foothold and deploy malware.",
+        "agent_confidence": 1.0,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "3d3afd49",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials ('pi'/'raspberryraspberry993311'), indicating an automated brute-force or dictionary attack. Immediately after login, a file was downloaded via stdin, without any interactive commands, which is characteristic of an automated bot deploying a payload to establish a persistent presence.",
+        "agent_confidence": 1.0,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "05d1ea12",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Execution",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials ('pi:raspberryraspberry993311') for a Raspberry Pi. Immediately upon login, a script was downloaded via stdin and executed, indicating an automated attempt to establish control and deploy further malicious capabilities without leaving explicit command history. This is a typical automated attack targeting IoT devices with weak credentials.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "e748c942",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The session shows a successful SSH login using the default 'pi:raspberry' credentials, indicating a scan for vulnerable IoT devices. Immediately following authentication, a file was uploaded to the honeypot via stdin (likely an SCP/SFTP transfer), which is a common method for delivering malware or tools (T1105 - Ingress Tool Transfer) to establish a foothold and enable further malicious activities. The lack of interactive commands suggests an automated or highly targeted payload delivery, aiming for execution, persistence, and C2.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "49282bc9",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "An attacker successfully authenticated to the honeypot using common default credentials (pi:raspberry). Following authentication, they uploaded a file to the system (logged as a 'download from stdin' by the honeypot, indicating an ingress transfer). No further commands were executed, suggesting an automated script or a quick payload drop without interactive exploration.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "7c6921c0",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default Raspberry Pi credentials ('pi:raspberryraspberry993311'). Immediately after authentication, a file was transferred to the honeypot via 'stdin', indicating a direct payload drop. This is a clear attempt to compromise the system, likely for inclusion in a botnet, despite no explicit commands being logged post-login.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "c0a65fbc",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Unknown",
+        "agent_reasoning": "couldn't parse response: ```json\n{\n  \"threat_level\": 2,\n  \"primary_tactic\": \"Initial Access\",\n  \"all_tactics\": [\n    \"Initial...",
+        "agent_confidence": 0.0,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "dff57a83",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberryraspberry993311) via SSH. Immediately after authentication, a file was uploaded to the honeypot without any commands being executed. This behavior suggests an automated script attempting to gain initial access and drop a payload for potential future execution or persistence.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "6f79ba6d",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry), indicating a credential stuffing or brute-force attack. Immediately after login, a file was 'downloaded from stdin' without any explicit commands being executed. This suggests an automated attempt to pipe a malicious payload directly into the SSH session for execution, likely to establish persistence or further compromise the system.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "8ed208ec",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "Attacker successfully authenticated via SSH using common default credentials (pi:raspberryraspberry993311). Immediately after authentication, a file was delivered via stdin, indicating an attempt to deploy and likely execute a malicious payload. No further commands were observed, suggesting the session was short-lived or the honeypot prevented further interaction.",
+        "agent_confidence": 1.0,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "2d81f5e8",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The session shows a successful SSH login using default/weak credentials ('pi:raspberryraspberry993311'), indicating a targeted scan for common vulnerabilities. Immediately after authentication, a file was transferred to the honeypot, logged as a 'download' from 'stdin' without any explicit shell commands. This suggests an automated file transfer over the SSH channel (e.g., scp/sftp or direct pipe), delivering a payload (likely malware) as part of the initial compromise.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "d6aa52ea",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using default 'pi:raspberry' credentials, indicating a lack of sophisticated targeting. They then uploaded a file to the honeypot, likely a malicious payload intended for execution, persistence, or further compromise. The absence of further commands suggests either a quick drop-and-disconnect or an automated process.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "45f3d305",
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry), indicating a scan for vulnerable IoT devices. Immediately after authentication, a file was downloaded via stdin without any explicit commands, suggesting an automated payload delivery mechanism. This is a high-threat event as it represents a successful compromise and immediate deployment of malicious code.",
+        "agent_confidence": 0.9,
+        "commands": [],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "a67a404e",
+        "rule_tactic": "Unknown Activity (Low)",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated as 'root' using a likely weak or default password. Immediately after gaining access, they attempted to install 'wget', a common utility used to download additional tools or malware. This indicates an intent to further compromise the system by fetching and executing malicious payloads.",
+        "agent_confidence": 0.9,
+        "commands": [
+          {
+            "timestamp": "2020-05-02 07:35:36.203875+00:00",
+            "input": "yum -y install wget",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "97fb72c1",
+        "rule_tactic": "Unknown Activity (Low)",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully gained initial access using default or weak credentials (`root:QWE#2019asd`). They immediately attempted to install `wget` to facilitate further tool download and subsequent compromise, indicating a preparatory step for establishing persistence or executing a payload. This appears to be a script-kiddie level attack due to the use of common credentials and a single, basic command.",
+        "agent_confidence": 0.9,
+        "commands": [
+          {
+            "timestamp": "2020-05-02 07:32:36.947950+00:00",
+            "input": "yum -y install wget",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "6a51627d",
+        "rule_tactic": "Persistence",
+        "agent_tactic": "Defense Evasion",
+        "agent_reasoning": "The attacker successfully authenticated as root using a common credential, then immediately attempted to disable multiple firewall services in rapid succession. This machine-speed activity, coupled with the lack of further commands, strongly suggests an automated script or bot preparing the system for subsequent malware deployment by removing host-based defenses.",
+        "agent_confidence": 1.0,
+        "commands": [
+          {
+            "timestamp": "2020-05-02 07:36:23.257343+00:00",
+            "input": "/etc/init.d/iptables stop",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-02 07:36:23.259277+00:00",
+            "input": "SuSEfirewall2 stop",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-02 07:36:23.260251+00:00",
+            "input": "reSuSEfirewall2 stop",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": [
+          "init_d"
+        ]
+      },
+      {
+        "session_id": "dffda61c",
+        "rule_tactic": "Persistence",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated as root using a weak password, indicating a likely brute-force or credential stuffing attack. Immediately after gaining access, they attempted to disable system firewalls (`iptables`, `SuSEfirewall2`) and install `wget`, which are common preparatory steps for downloading and executing further malicious tools or payloads. This behavior is typical of automated attacks or script kiddies.",
+        "agent_confidence": 0.9,
+        "commands": [
+          {
+            "timestamp": "2020-05-02 07:34:47.043630+00:00",
+            "input": "/etc/init.d/iptables stop",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-02 07:34:47.045738+00:00",
+            "input": "SuSEfirewall2 stop",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-02 07:34:47.046793+00:00",
+            "input": "reSuSEfirewall2 stop",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-02 07:34:47.047949+00:00",
+            "input": "yum -y install wget",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": [
+          "init_d"
+        ]
+      },
+      {
+        "session_id": "6d3955cc",
+        "rule_tactic": "Persistence",
+        "agent_tactic": "Defense Evasion",
+        "agent_reasoning": "The attacker successfully logged in as 'root' using a likely compromised or default password. Their immediate action was to execute commands to stop various firewall services (iptables, SuSEfirewall2), indicating an attempt to remove defensive barriers. The lack of further actions and the use of common commands suggest a script-kiddie level of sophistication.",
+        "agent_confidence": 0.9,
+        "commands": [
+          {
+            "timestamp": "2020-05-02 07:34:00.172534+00:00",
+            "input": "/etc/init.d/iptables stop",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-02 07:34:00.175090+00:00",
+            "input": "SuSEfirewall2 stop",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-02 07:34:00.176332+00:00",
+            "input": "reSuSEfirewall2 stop",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": [
+          "init_d"
+        ]
+      },
+      {
+        "session_id": "38b3e57b",
+        "rule_tactic": "Execution",
+        "agent_tactic": "Persistence",
+        "agent_reasoning": "The session shows a successful SSH login using likely compromised or default credentials ('mc:server'). The attacker then immediately attempted to create a new user ('adduser sekin') for persistence. The subsequent './n' command indicates an attempt to execute a pre-staged or previously downloaded binary/script. The commands 't', 'user', 'x' are ambiguous but suggest some fumbling or basic discovery attempts. This multi-stage approach (access -> persistence -> execution) indicates an intermediate level of sophistication, despite the simplicity of the commands.",
+        "agent_confidence": 0.9,
+        "commands": [
+          {
+            "timestamp": "2020-05-01 19:36:34.002434+00:00",
+            "input": "t",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-01 19:36:41.674551+00:00",
+            "input": "adduser sekin",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-01 19:36:49.136149+00:00",
+            "input": "user",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-01 19:36:53.128721+00:00",
+            "input": "x",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-01 19:43:19.537771+00:00",
+            "input": "./n",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": [
+          "adduser",
+          "direct_execute"
+        ]
+      },
+      {
+        "session_id": "1a7c4c34",
+        "rule_tactic": "Persistence",
+        "agent_tactic": "Defense Evasion",
+        "agent_reasoning": "The attacker successfully authenticated using what appears to be a weak or default 'root' password. Immediately after gaining access, they executed commands to disable common Linux firewall services (`iptables`, `SuSEfirewall2`). This indicates an attempt to remove host-based defenses to prepare for subsequent actions, likely automated, and is a critical step in an attack chain.",
+        "agent_confidence": 0.9,
+        "commands": [
+          {
+            "timestamp": "2020-05-02 07:35:03.311883+00:00",
+            "input": "/etc/init.d/iptables stop",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-02 07:35:03.313956+00:00",
+            "input": "SuSEfirewall2 stop",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-02 07:35:03.314951+00:00",
+            "input": "reSuSEfirewall2 stop",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": [
+          "init_d"
+        ]
+      },
+      {
+        "session_id": "ad92d2e5",
+        "rule_tactic": "Persistence",
+        "agent_tactic": "Defense Evasion",
+        "agent_reasoning": "The attacker successfully authenticated using 'root' and a simple password, indicating compromised credentials or a weak password. Their immediate action was to execute commands to stop various firewall services, which is a clear attempt at defense evasion. The rapid execution and common commands suggest automated or scripted behavior.",
+        "agent_confidence": 0.9,
+        "commands": [
+          {
+            "timestamp": "2020-05-02 21:01:58.417295+00:00",
+            "input": "/etc/init.d/iptables stop",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-02 21:01:58.419605+00:00",
+            "input": "SuSEfirewall2 stop",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-02 21:01:58.420691+00:00",
+            "input": "reSuSEfirewall2 stop",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": [
+          "init_d"
+        ]
+      },
+      {
+        "session_id": "ba3a059d",
+        "rule_tactic": "Unknown Activity (Low)",
+        "agent_tactic": "Execution",
+        "agent_reasoning": "The attacker successfully gained root access via SSH using a likely common or brute-forced password. The immediate action was to execute 'yum -y install wget', indicating an intent to download further payloads or tools. This is a common initial step for establishing a foothold and preparing for subsequent stages of attack, such as collection, exfiltration, or impact. The simplicity of the attack (one command, common tool) suggests a low sophistication level, likely an automated script or a script kiddie.",
+        "agent_confidence": 0.9,
+        "commands": [
+          {
+            "timestamp": "2020-05-02 21:04:46.077734+00:00",
+            "input": "yum -y install wget",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "6eaa748e",
+        "rule_tactic": "Persistence",
+        "agent_tactic": "Discovery",
+        "agent_reasoning": "The attacker successfully logged in as root using a common credential ('live'). They then rapidly executed a series of basic discovery commands (lastlog, arp, ifconfig, crontab -l) within 3.5 seconds. This behavior, combined with the 'MACHINE_SPEED' tag and high anomaly scores for command execution, is highly indicative of an automated script or a script kiddie quickly probing for vulnerable systems.",
+        "agent_confidence": 0.9,
+        "commands": [
+          {
+            "timestamp": "2020-05-03 01:51:41.628647+00:00",
+            "input": "lastlog",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-03 01:51:41.649341+00:00",
+            "input": "/usr/sbin/arp -an",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-03 01:51:41.651520+00:00",
+            "input": "/usr/sbin/ifconfig",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-03 01:51:41.679332+00:00",
+            "input": "crontab -l",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": [
+          "crontab_edit",
+          "ifconfig"
+        ]
+      },
+      {
+        "session_id": "a9cf2b03",
+        "rule_tactic": "Persistence",
+        "agent_tactic": "Defense Evasion",
+        "agent_reasoning": "The attacker successfully authenticated as root using a likely common or brute-forced credential. Immediately after gaining access, they attempted to disable host-based firewalls (iptables, SuSEfirewall2). This indicates an intent to remove defenses to facilitate subsequent actions, such as downloading and executing malware or establishing C2 communication, without being blocked.",
+        "agent_confidence": 0.9,
+        "commands": [
+          {
+            "timestamp": "2020-05-03 06:15:59.640296+00:00",
+            "input": "/etc/init.d/iptables stop",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-03 06:15:59.644419+00:00",
+            "input": "SuSEfirewall2 stop",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-03 06:15:59.645737+00:00",
+            "input": "reSuSEfirewall2 stop",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": [
+          "init_d"
+        ]
+      },
+      {
+        "session_id": "b40eb2f0",
+        "rule_tactic": "Unknown Activity (High)",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "A successful SSH login with default 'root' credentials is a critical security event, categorized as Initial Access (T1078.001). The subsequent execution of a simple 'while' loop command (T1059.004) suggests a basic test or an automated script. The lack of more complex commands or downloads points to a low-sophistication attacker, likely an automated scanner or script kiddie, but the successful access warrants a medium threat level.",
+        "agent_confidence": 0.9,
+        "commands": [
+          {
+            "timestamp": "2020-05-02 22:15:25.378136+00:00",
+            "input": "while [ -d /proc/$PPID ]",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-02 22:15:25.379416+00:00",
+            "input": "do sleep 1",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": []
+      },
+      {
+        "session_id": "c347a81b",
+        "rule_tactic": "Persistence",
+        "agent_tactic": "Defense Evasion",
+        "agent_reasoning": "The attacker successfully authenticated as 'root' using a potentially common or leaked password. Immediately after gaining access, they executed commands to stop iptables and SuSEfirewall2, indicating an attempt to disable host-based defenses. This is a common preparatory step for subsequent malicious activities, but no further actions were observed in this short session.",
+        "agent_confidence": 1.0,
+        "commands": [
+          {
+            "timestamp": "2020-05-04 19:40:10.047789+00:00",
+            "input": "/etc/init.d/iptables stop",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-04 19:40:10.049986+00:00",
+            "input": "SuSEfirewall2 stop",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-04 19:40:10.051079+00:00",
+            "input": "reSuSEfirewall2 stop",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": [
+          "init_d"
+        ]
+      },
+      {
+        "session_id": "457e7690",
+        "rule_tactic": "Persistence",
+        "agent_tactic": "Defense Evasion",
+        "agent_reasoning": "The attacker successfully gained root access using a likely common or default password. Immediately upon login, they attempted to disable multiple firewall services (iptables, SuSEfirewall2), indicating a clear intent to remove host-based security controls. The short session duration, generic commands, and use of an old PuTTY client suggest an automated attack or a low-sophistication actor.",
+        "agent_confidence": 0.9,
+        "commands": [
+          {
+            "timestamp": "2020-05-04 19:48:52.710729+00:00",
+            "input": "/etc/init.d/iptables stop",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-04 19:48:52.712919+00:00",
+            "input": "SuSEfirewall2 stop",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-04 19:48:52.713993+00:00",
+            "input": "reSuSEfirewall2 stop",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": [
+          "init_d"
+        ]
+      },
+      {
+        "session_id": "5b7060a5",
+        "rule_tactic": "Persistence",
+        "agent_tactic": "Defense Evasion",
+        "agent_reasoning": "The attacker successfully gained root access using a hardcoded or guessed password. Their immediate and only actions were to execute commands to stop multiple firewall services (iptables, SuSEfirewall2). This is a critical preparatory step for further compromise, indicating an attempt to remove security controls before proceeding with other malicious actions. The limited and direct nature of the commands suggests an automated script or a script-kiddie following a basic playbook.",
+        "agent_confidence": 0.9,
+        "commands": [
+          {
+            "timestamp": "2020-05-04 20:11:47.686488+00:00",
+            "input": "/etc/init.d/iptables stop",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-04 20:11:47.688509+00:00",
+            "input": "SuSEfirewall2 stop",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-04 20:11:47.689854+00:00",
+            "input": "reSuSEfirewall2 stop",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": [
+          "init_d"
+        ]
+      },
+      {
+        "session_id": "79d44170",
+        "rule_tactic": "Unknown Activity (Low)",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated as 'root' using a likely weak or default password. The immediate action was to install 'wget', a common utility for downloading files, indicating an intent to retrieve further tools or malware. This is a basic, automated or semi-automated first step in a compromise chain.",
+        "agent_confidence": 1.0,
+        "commands": [
+          {
+            "timestamp": "2020-05-04 19:46:26.743806+00:00",
+            "input": "yum -y install wget",
+            "success": false
+          }
+        ],
+        "rule_matched_patterns": []
+      }
+    ],
+    "level_disagreements": [
+      {
+        "session_id": "57bca222",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "An attacker successfully logged into the honeypot using default SSH credentials (pi:raspberryraspberry993311). Immediately after gaining access, they uploaded a file (indicated by 'Downloads' from 'stdin'). This suggests an automated attempt to establish a foothold or deploy a payload without further interaction or reconnaissance."
+      },
+      {
+        "session_id": "81ffe55a",
+        "rule_level": 3,
+        "agent_level": 1,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (T1078.001). Immediately after gaining access, they uploaded a file (indicated by 'url: \"stdin\"') without executing any commands, suggesting an automated attempt to deliver a malicious payload for execution (T1059) or to establish persistence on the compromised system."
+      },
+      {
+        "session_id": "4a6bbd20",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "Unknown Activity (Low)",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The session shows successful authentication with known credentials (ts3:12), indicating initial access. The subsequent commands are mostly mistyped or incomplete, such as 'c', 'ear', and 'closs', suggesting a low-skill attacker. The command 'remove boot' clearly indicates an intent for data destruction, even if poorly executed. The lack of successful follow-through or advanced techniques points to a script kiddie attempting disruptive actions."
+      },
+      {
+        "session_id": "3cbc4397",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "An attacker successfully authenticated to the honeypot using common default credentials ('pi'/'raspberryraspberry993311') for a Raspberry Pi. Immediately after authentication, a file was uploaded to the system (indicated by 'url: stdin' in the downloads section), likely via SCP or SFTP, without executing any shell commands. This behavior suggests an automated script attempting to drop a malicious payload for subsequent execution or to establish persistence."
+      },
+      {
+        "session_id": "00bb72ac",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry), indicating a basic attack method. They then transferred a file to the honeypot (Ingress Tool Transfer, T1105) without executing any further commands. This suggests an automated script or a simple, interrupted attempt to stage a payload for future malicious activity."
+      },
+      {
+        "session_id": "752304a8",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (`pi:raspberryraspberry993311`). Immediately after gaining access, a file was uploaded to the honeypot (Ingress Tool Transfer). While no commands were executed within this session, the file upload strongly suggests an attempt to establish persistence or deliver a payload for later execution."
+      },
+      {
+        "session_id": "ef693afc",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "An automated attacker successfully authenticated using common default credentials (pi:raspberryraspberry993311). Although no explicit commands were logged, a file was 'downloaded' via stdin, indicating an an attempt to deliver a payload directly through the SSH channel. This suggests an intent to execute malicious code, likely to establish persistence or further compromise the system, even if the execution itself wasn't observed."
+      },
+      {
+        "session_id": "252fabee",
+        "rule_level": 3,
+        "agent_level": 1,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry), indicating a successful Initial Access (T1078.001). Immediately after authentication, a file was downloaded directly via stdin, which is a method often used by automated scripts to deliver payloads (Execution - T1059) without leaving explicit command history. This suggests an attempt to compromise the system, likely for botnet recruitment or cryptocurrency mining, with the intent to establish Persistence and Command and Control."
+      },
+      {
+        "session_id": "6082db25",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using SSH with the 'pi' user and a specific password. Immediately after authentication, a file was 'downloaded' from stdin, indicating a payload was pushed to the system. The lack of further commands and the short duration suggest an automated script or a very basic, non-interactive attempt to drop malware."
+      },
+      {
+        "session_id": "1c3fd86a",
+        "rule_level": 1,
+        "agent_level": 2,
+        "rule_tactic": "Execution",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated via SSH using weak credentials. They then attempted basic system discovery by trying common package managers (`yum`, `apt`) and tried to execute non-existent commands or install a non-existent package ('cpu'). The lack of successful payload delivery or further system compromise, combined with the generic and often incorrect commands, indicates a low level of sophistication."
+      },
+      {
+        "session_id": "2fd87df1",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated to the honeypot using valid credentials (pi:raspberryraspberry993311), indicating a targeted attempt or use of leaked credentials for Raspberry Pi devices. Immediately after authentication, a file was uploaded to the honeypot (indicated by the 'downloads' section with 'url: stdin'), strongly suggesting the intent to deploy and execute a malicious payload. The lack of further commands implies an automated or pre-scripted action."
+      },
+      {
+        "session_id": "de4629d8",
+        "rule_level": 3,
+        "agent_level": 1,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials ('pi:raspberryraspberry993311'). Immediately after login, a file was downloaded via 'stdin', indicating an automated payload delivery attempt. This suggests an automated scanner or script kiddie trying to compromise vulnerable systems by pushing a malicious file."
+      },
+      {
+        "session_id": "89dc1b10",
+        "rule_level": 3,
+        "agent_level": 1,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry) and immediately uploaded a file (indicated by 'stdin' download) without executing any interactive commands. This behavior is highly indicative of an automated script or botnet attempting to compromise the system by dropping a payload for later execution."
+      },
+      {
+        "session_id": "dcf42dbb",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry), indicating a credential stuffing or brute-force attempt against common IoT/Raspberry Pi setups. Immediately after authentication, a file was downloaded to the system. While no explicit execution commands were observed in this session, the presence of a downloaded file strongly suggests an intent to establish persistence or execute a malicious payload (e.g., a bot, miner, or backdoor). The lack of further interaction might indicate an automated script or a multi-stage attack."
+      },
+      {
+        "session_id": "6708b586",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "An attacker successfully authenticated using common default credentials for Raspberry Pi. Immediately after login, a payload was delivered via 'stdin' without any explicit commands being logged, indicating an automated attempt to push and likely execute a script or binary. The short duration and lack of interactive commands suggest a bot or automated script."
+      },
+      {
+        "session_id": "a4654f85",
+        "rule_level": 3,
+        "agent_level": 1,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default Raspberry Pi credentials (`pi:raspberryraspberry993311`). Immediately after gaining access, they uploaded a file via `stdin` (likely `scp` or `sftp`), indicating an attempt to deploy malware or a tool for further compromise and persistence, without executing any commands post-login. This behavior is typical of automated scans leveraging known weak credentials."
+      },
+      {
+        "session_id": "e0bb2dea",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Unknown",
+        "agent_reasoning": "couldn't parse response: ```json\n{\n  \"threat_level\": 2,\n  \"primary_tactic\": \"Initial Access\",\n  \"all_tactics\": [\"Initial Acce..."
+      },
+      {
+        "session_id": "914171d3",
+        "rule_level": 3,
+        "agent_level": 1,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry), indicating a brute-force or credential stuffing attack. Immediately after login, a file was downloaded via stdin without any explicit commands, strongly suggesting an automated script or tool piping a malicious payload for execution. This is a clear attempt to establish a foothold and deploy malware."
+      },
+      {
+        "session_id": "3d3afd49",
+        "rule_level": 3,
+        "agent_level": 1,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials ('pi'/'raspberryraspberry993311'), indicating an automated brute-force or dictionary attack. Immediately after login, a file was downloaded via stdin, without any interactive commands, which is characteristic of an automated bot deploying a payload to establish a persistent presence."
+      },
+      {
+        "session_id": "05d1ea12",
+        "rule_level": 3,
+        "agent_level": 1,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Execution",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials ('pi:raspberryraspberry993311') for a Raspberry Pi. Immediately upon login, a script was downloaded via stdin and executed, indicating an automated attempt to establish control and deploy further malicious capabilities without leaving explicit command history. This is a typical automated attack targeting IoT devices with weak credentials."
+      },
+      {
+        "session_id": "e748c942",
+        "rule_level": 3,
+        "agent_level": 1,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The session shows a successful SSH login using the default 'pi:raspberry' credentials, indicating a scan for vulnerable IoT devices. Immediately following authentication, a file was uploaded to the honeypot via stdin (likely an SCP/SFTP transfer), which is a common method for delivering malware or tools (T1105 - Ingress Tool Transfer) to establish a foothold and enable further malicious activities. The lack of interactive commands suggests an automated or highly targeted payload delivery, aiming for execution, persistence, and C2."
+      },
+      {
+        "session_id": "49282bc9",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "An attacker successfully authenticated to the honeypot using common default credentials (pi:raspberry). Following authentication, they uploaded a file to the system (logged as a 'download from stdin' by the honeypot, indicating an ingress transfer). No further commands were executed, suggesting an automated script or a quick payload drop without interactive exploration."
+      },
+      {
+        "session_id": "7c6921c0",
+        "rule_level": 3,
+        "agent_level": 1,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default Raspberry Pi credentials ('pi:raspberryraspberry993311'). Immediately after authentication, a file was transferred to the honeypot via 'stdin', indicating a direct payload drop. This is a clear attempt to compromise the system, likely for inclusion in a botnet, despite no explicit commands being logged post-login."
+      },
+      {
+        "session_id": "c0a65fbc",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Unknown",
+        "agent_reasoning": "couldn't parse response: ```json\n{\n  \"threat_level\": 2,\n  \"primary_tactic\": \"Initial Access\",\n  \"all_tactics\": [\n    \"Initial..."
+      },
+      {
+        "session_id": "dff57a83",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberryraspberry993311) via SSH. Immediately after authentication, a file was uploaded to the honeypot without any commands being executed. This behavior suggests an automated script attempting to gain initial access and drop a payload for potential future execution or persistence."
+      },
+      {
+        "session_id": "6f79ba6d",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry), indicating a credential stuffing or brute-force attack. Immediately after login, a file was 'downloaded from stdin' without any explicit commands being executed. This suggests an automated attempt to pipe a malicious payload directly into the SSH session for execution, likely to establish persistence or further compromise the system."
+      },
+      {
+        "session_id": "8ed208ec",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "Attacker successfully authenticated via SSH using common default credentials (pi:raspberryraspberry993311). Immediately after authentication, a file was delivered via stdin, indicating an attempt to deploy and likely execute a malicious payload. No further commands were observed, suggesting the session was short-lived or the honeypot prevented further interaction."
+      },
+      {
+        "session_id": "cfd58ece",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "Discovery",
+        "agent_tactic": "Discovery",
+        "agent_reasoning": "The session shows a successful SSH login using a weak, common username/password combination ('quantum:123456'). Immediately after gaining access, a single command was executed to retrieve CPU information. This indicates a basic reconnaissance attempt following initial access, typical of automated scans or script kiddie activity. The short duration and single command suggest a lack of deeper engagement."
+      },
+      {
+        "session_id": "2d81f5e8",
+        "rule_level": 3,
+        "agent_level": 1,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The session shows a successful SSH login using default/weak credentials ('pi:raspberryraspberry993311'), indicating a targeted scan for common vulnerabilities. Immediately after authentication, a file was transferred to the honeypot, logged as a 'download' from 'stdin' without any explicit shell commands. This suggests an automated file transfer over the SSH channel (e.g., scp/sftp or direct pipe), delivering a payload (likely malware) as part of the initial compromise."
+      },
+      {
+        "session_id": "d6aa52ea",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using default 'pi:raspberry' credentials, indicating a lack of sophisticated targeting. They then uploaded a file to the honeypot, likely a malicious payload intended for execution, persistence, or further compromise. The absence of further commands suggests either a quick drop-and-disconnect or an automated process."
+      },
+      {
+        "session_id": "45f3d305",
+        "rule_level": 3,
+        "agent_level": 1,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry), indicating a scan for vulnerable IoT devices. Immediately after authentication, a file was downloaded via stdin without any explicit commands, suggesting an automated payload delivery mechanism. This is a high-threat event as it represents a successful compromise and immediate deployment of malicious code."
+      },
+      {
+        "session_id": "a67a404e",
+        "rule_level": 3,
+        "agent_level": 1,
+        "rule_tactic": "Unknown Activity (Low)",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated as 'root' using a likely weak or default password. Immediately after gaining access, they attempted to install 'wget', a common utility used to download additional tools or malware. This indicates an intent to further compromise the system by fetching and executing malicious payloads."
+      },
+      {
+        "session_id": "97fb72c1",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "Unknown Activity (Low)",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully gained initial access using default or weak credentials (`root:QWE#2019asd`). They immediately attempted to install `wget` to facilitate further tool download and subsequent compromise, indicating a preparatory step for establishing persistence or executing a payload. This appears to be a script-kiddie level attack due to the use of common credentials and a single, basic command."
+      },
+      {
+        "session_id": "6a51627d",
+        "rule_level": 2,
+        "agent_level": 1,
+        "rule_tactic": "Persistence",
+        "agent_tactic": "Defense Evasion",
+        "agent_reasoning": "The attacker successfully authenticated as root using a common credential, then immediately attempted to disable multiple firewall services in rapid succession. This machine-speed activity, coupled with the lack of further commands, strongly suggests an automated script or bot preparing the system for subsequent malware deployment by removing host-based defenses."
+      },
+      {
+        "session_id": "dffda61c",
+        "rule_level": 2,
+        "agent_level": 1,
+        "rule_tactic": "Persistence",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated as root using a weak password, indicating a likely brute-force or credential stuffing attack. Immediately after gaining access, they attempted to disable system firewalls (`iptables`, `SuSEfirewall2`) and install `wget`, which are common preparatory steps for downloading and executing further malicious tools or payloads. This behavior is typical of automated attacks or script kiddies."
+      },
+      {
+        "session_id": "6d3955cc",
+        "rule_level": 2,
+        "agent_level": 1,
+        "rule_tactic": "Persistence",
+        "agent_tactic": "Defense Evasion",
+        "agent_reasoning": "The attacker successfully logged in as 'root' using a likely compromised or default password. Their immediate action was to execute commands to stop various firewall services (iptables, SuSEfirewall2), indicating an attempt to remove defensive barriers. The lack of further actions and the use of common commands suggest a script-kiddie level of sophistication."
+      },
+      {
+        "session_id": "1a7c4c34",
+        "rule_level": 2,
+        "agent_level": 1,
+        "rule_tactic": "Persistence",
+        "agent_tactic": "Defense Evasion",
+        "agent_reasoning": "The attacker successfully authenticated using what appears to be a weak or default 'root' password. Immediately after gaining access, they executed commands to disable common Linux firewall services (`iptables`, `SuSEfirewall2`). This indicates an attempt to remove host-based defenses to prepare for subsequent actions, likely automated, and is a critical step in an attack chain."
+      },
+      {
+        "session_id": "ad92d2e5",
+        "rule_level": 2,
+        "agent_level": 1,
+        "rule_tactic": "Persistence",
+        "agent_tactic": "Defense Evasion",
+        "agent_reasoning": "The attacker successfully authenticated using 'root' and a simple password, indicating compromised credentials or a weak password. Their immediate action was to execute commands to stop various firewall services, which is a clear attempt at defense evasion. The rapid execution and common commands suggest automated or scripted behavior."
+      },
+      {
+        "session_id": "ba3a059d",
+        "rule_level": 3,
+        "agent_level": 1,
+        "rule_tactic": "Unknown Activity (Low)",
+        "agent_tactic": "Execution",
+        "agent_reasoning": "The attacker successfully gained root access via SSH using a likely common or brute-forced password. The immediate action was to execute 'yum -y install wget', indicating an intent to download further payloads or tools. This is a common initial step for establishing a foothold and preparing for subsequent stages of attack, such as collection, exfiltration, or impact. The simplicity of the attack (one command, common tool) suggests a low sophistication level, likely an automated script or a script kiddie."
+      },
+      {
+        "session_id": "a9cf2b03",
+        "rule_level": 2,
+        "agent_level": 1,
+        "rule_tactic": "Persistence",
+        "agent_tactic": "Defense Evasion",
+        "agent_reasoning": "The attacker successfully authenticated as root using a likely common or brute-forced credential. Immediately after gaining access, they attempted to disable host-based firewalls (iptables, SuSEfirewall2). This indicates an intent to remove defenses to facilitate subsequent actions, such as downloading and executing malware or establishing C2 communication, without being blocked."
+      },
+      {
+        "session_id": "b40eb2f0",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "Unknown Activity (High)",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "A successful SSH login with default 'root' credentials is a critical security event, categorized as Initial Access (T1078.001). The subsequent execution of a simple 'while' loop command (T1059.004) suggests a basic test or an automated script. The lack of more complex commands or downloads points to a low-sophistication attacker, likely an automated scanner or script kiddie, but the successful access warrants a medium threat level."
+      },
+      {
+        "session_id": "457e7690",
+        "rule_level": 2,
+        "agent_level": 1,
+        "rule_tactic": "Persistence",
+        "agent_tactic": "Defense Evasion",
+        "agent_reasoning": "The attacker successfully gained root access using a likely common or default password. Immediately upon login, they attempted to disable multiple firewall services (iptables, SuSEfirewall2), indicating a clear intent to remove host-based security controls. The short session duration, generic commands, and use of an old PuTTY client suggest an automated attack or a low-sophistication actor."
+      },
+      {
+        "session_id": "79d44170",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "Unknown Activity (Low)",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated as 'root' using a likely weak or default password. The immediate action was to install 'wget', a common utility for downloading files, indicating an intent to retrieve further tools or malware. This is a basic, automated or semi-automated first step in a compromise chain."
+      },
+      {
+        "session_id": "ef4a2ca1",
+        "rule_level": 2,
+        "agent_level": 1,
+        "rule_tactic": "Persistence",
+        "agent_tactic": "Defense Evasion",
+        "agent_reasoning": "The attacker gained initial access via SSH using root credentials, which is a critical compromise. Their immediate action was to disable system firewalls (iptables, SuSEfirewall2), indicating an attempt to remove security controls before proceeding with other actions. The short duration and simple commands suggest a script-kiddie level of sophistication, likely testing access or preparing for automated follow-up."
+      },
+      {
+        "session_id": "38025ea4",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "Discovery",
+        "agent_tactic": "Discovery",
+        "agent_reasoning": "The attacker successfully authenticated via SSH using common/default credentials (wcs:wcs). They then executed a single command to gather system information (CPU details via /proc/cpuinfo), which is a typical initial reconnaissance step. The use of an old libssh client and a single, common discovery command suggests an automated script or a low-sophistication attacker."
+      },
+      {
+        "session_id": "854bf901",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "Discovery",
+        "agent_tactic": "Discovery",
+        "agent_reasoning": "The attacker successfully logged in via SSH using extremely weak credentials ('admin'/'123132123'), indicative of a brute-force or dictionary attack. They immediately executed a single command to gather CPU information, a common reconnaissance step to assess system capabilities, potentially for deploying resource-intensive malware like crypto miners or determining further exploitation value. The very short session duration suggests an automated probe or a quick assessment."
+      },
+      {
+        "session_id": "f47dc54f",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "Discovery",
+        "agent_tactic": "Discovery",
+        "agent_reasoning": "The attacker successfully authenticated using weak/default credentials (jf:jf), indicating a basic initial access attempt. Following this, a single command was executed to gather system information about the CPU, which is a common reconnaissance step. The limited activity and use of default credentials suggest a low level of sophistication."
+      },
+      {
+        "session_id": "73880c67",
+        "rule_level": 3,
+        "agent_level": 1,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "An attacker successfully authenticated to the honeypot using common default credentials for Raspberry Pi. Immediately after gaining access, they uploaded a file (likely a malicious payload) to the system. No shell commands were explicitly executed, suggesting the attacker either intended to execute the payload in a subsequent session or the file transfer mechanism itself was used to deliver a self-executing or passively-executing payload. This indicates an attempt to compromise the system and establish persistence or further malicious activity."
+      },
+      {
+        "session_id": "ae1dcbfc",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "No Action",
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberryraspberry993311), indicating an automated scan. Immediately after login, a file was downloaded (as evidenced by the shasum), suggesting an attempt to drop a payload. The lack of further commands implies a simple, automated script that establishes a foothold and delivers a malicious file."
+      },
+      {
+        "session_id": "25b0bd0d",
+        "rule_level": 3,
+        "agent_level": 2,
+        "rule_tactic": "Discovery",
+        "agent_tactic": "Discovery",
+        "agent_reasoning": "The attacker successfully authenticated using the common 'njrat/njrat' credentials, indicating an automated scan or brute-force attempt. They then executed a single command to discover CPU information, a common reconnaissance step for botnet recruitment or resource assessment. The old SSH client and short session duration suggest an unsophisticated, automated tool."
+      }
+    ],
+    "agent_only_detections": [
+      {
+        "session_id": "57bca222",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "An attacker successfully logged into the honeypot using default SSH credentials (pi:raspberryraspberry993311). Immediately after gaining access, they uploaded a file (indicated by 'Downloads' from 'stdin'). This suggests an automated attempt to establish a foothold or deploy a payload without further interaction or reconnaissance.",
+        "technique_ids": [
+          "T1078.003",
+          "T1105"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "81ffe55a",
+        "agent_level": 1,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (T1078.001). Immediately after gaining access, they uploaded a file (indicated by 'url: \"stdin\"') without executing any commands, suggesting an automated attempt to deliver a malicious payload for execution (T1059) or to establish persistence on the compromised system.",
+        "technique_ids": [
+          "T1078.001",
+          "T1059"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "4a6bbd20",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The session shows successful authentication with known credentials (ts3:12), indicating initial access. The subsequent commands are mostly mistyped or incomplete, such as 'c', 'ear', and 'closs', suggesting a low-skill attacker. The command 'remove boot' clearly indicates an intent for data destruction, even if poorly executed. The lack of successful follow-through or advanced techniques points to a script kiddie attempting disruptive actions.",
+        "technique_ids": [
+          "T1078.001",
+          "T1059.004",
+          "T1485"
+        ],
+        "commands": [
+          {
+            "timestamp": "2020-04-19 03:21:42.194373+00:00",
+            "input": "c",
+            "success": false
+          },
+          {
+            "timestamp": "2020-04-19 03:21:42.196529+00:00",
+            "input": "ear",
+            "success": false
+          },
+          {
+            "timestamp": "2020-04-19 03:22:51.812926+00:00",
+            "input": "restart",
+            "success": false
+          },
+          {
+            "timestamp": "2020-04-19 03:23:26.759741+00:00",
+            "input": "remove boot",
+            "success": false
+          },
+          {
+            "timestamp": "2020-04-19 03:23:29.716457+00:00",
+            "input": "closs",
+            "success": false
+          }
+        ]
+      },
+      {
+        "session_id": "3cbc4397",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "An attacker successfully authenticated to the honeypot using common default credentials ('pi'/'raspberryraspberry993311') for a Raspberry Pi. Immediately after authentication, a file was uploaded to the system (indicated by 'url: stdin' in the downloads section), likely via SCP or SFTP, without executing any shell commands. This behavior suggests an automated script attempting to drop a malicious payload for subsequent execution or to establish persistence.",
+        "technique_ids": [
+          "T1078.004",
+          "T1059",
+          "T1547"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "00bb72ac",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry), indicating a basic attack method. They then transferred a file to the honeypot (Ingress Tool Transfer, T1105) without executing any further commands. This suggests an automated script or a simple, interrupted attempt to stage a payload for future malicious activity.",
+        "technique_ids": [
+          "T1078.004",
+          "T1105"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "752304a8",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (`pi:raspberryraspberry993311`). Immediately after gaining access, a file was uploaded to the honeypot (Ingress Tool Transfer). While no commands were executed within this session, the file upload strongly suggests an attempt to establish persistence or deliver a payload for later execution.",
+        "technique_ids": [
+          "T1078",
+          "T1078.001",
+          "T1105"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "ef693afc",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "An automated attacker successfully authenticated using common default credentials (pi:raspberryraspberry993311). Although no explicit commands were logged, a file was 'downloaded' via stdin, indicating an an attempt to deliver a payload directly through the SSH channel. This suggests an intent to execute malicious code, likely to establish persistence or further compromise the system, even if the execution itself wasn't observed.",
+        "technique_ids": [
+          "T1078.001",
+          "T1059"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "252fabee",
+        "agent_level": 1,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry), indicating a successful Initial Access (T1078.001). Immediately after authentication, a file was downloaded directly via stdin, which is a method often used by automated scripts to deliver payloads (Execution - T1059) without leaving explicit command history. This suggests an attempt to compromise the system, likely for botnet recruitment or cryptocurrency mining, with the intent to establish Persistence and Command and Control.",
+        "technique_ids": [
+          "T1078.001",
+          "T1059"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "6082db25",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using SSH with the 'pi' user and a specific password. Immediately after authentication, a file was 'downloaded' from stdin, indicating a payload was pushed to the system. The lack of further commands and the short duration suggest an automated script or a very basic, non-interactive attempt to drop malware.",
+        "technique_ids": [
+          "T1078.004",
+          "T1059"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "2fd87df1",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated to the honeypot using valid credentials (pi:raspberryraspberry993311), indicating a targeted attempt or use of leaked credentials for Raspberry Pi devices. Immediately after authentication, a file was uploaded to the honeypot (indicated by the 'downloads' section with 'url: stdin'), strongly suggesting the intent to deploy and execute a malicious payload. The lack of further commands implies an automated or pre-scripted action.",
+        "technique_ids": [
+          "T1078.004",
+          "T1059"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "de4629d8",
+        "agent_level": 1,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials ('pi:raspberryraspberry993311'). Immediately after login, a file was downloaded via 'stdin', indicating an automated payload delivery attempt. This suggests an automated scanner or script kiddie trying to compromise vulnerable systems by pushing a malicious file.",
+        "technique_ids": [
+          "T1078",
+          "T1059"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "89dc1b10",
+        "agent_level": 1,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry) and immediately uploaded a file (indicated by 'stdin' download) without executing any interactive commands. This behavior is highly indicative of an automated script or botnet attempting to compromise the system by dropping a payload for later execution.",
+        "technique_ids": [
+          "T1078.001",
+          "T1105"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "dcf42dbb",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry), indicating a credential stuffing or brute-force attempt against common IoT/Raspberry Pi setups. Immediately after authentication, a file was downloaded to the system. While no explicit execution commands were observed in this session, the presence of a downloaded file strongly suggests an intent to establish persistence or execute a malicious payload (e.g., a bot, miner, or backdoor). The lack of further interaction might indicate an automated script or a multi-stage attack.",
+        "technique_ids": [
+          "T1078.004",
+          "T1059"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "6708b586",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "An attacker successfully authenticated using common default credentials for Raspberry Pi. Immediately after login, a payload was delivered via 'stdin' without any explicit commands being logged, indicating an automated attempt to push and likely execute a script or binary. The short duration and lack of interactive commands suggest a bot or automated script.",
+        "technique_ids": [
+          "T1078.004",
+          "T1059"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "a4654f85",
+        "agent_level": 1,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default Raspberry Pi credentials (`pi:raspberryraspberry993311`). Immediately after gaining access, they uploaded a file via `stdin` (likely `scp` or `sftp`), indicating an attempt to deploy malware or a tool for further compromise and persistence, without executing any commands post-login. This behavior is typical of automated scans leveraging known weak credentials.",
+        "technique_ids": [
+          "T1078.001",
+          "T1059",
+          "T1547.001"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "e0bb2dea",
+        "agent_level": 2,
+        "agent_tactic": "Unknown",
+        "agent_reasoning": "couldn't parse response: ```json\n{\n  \"threat_level\": 2,\n  \"primary_tactic\": \"Initial Access\",\n  \"all_tactics\": [\"Initial Acce...",
+        "technique_ids": [],
+        "commands": []
+      },
+      {
+        "session_id": "914171d3",
+        "agent_level": 1,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry), indicating a brute-force or credential stuffing attack. Immediately after login, a file was downloaded via stdin without any explicit commands, strongly suggesting an automated script or tool piping a malicious payload for execution. This is a clear attempt to establish a foothold and deploy malware.",
+        "technique_ids": [
+          "T1078.001",
+          "T1059"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "3d3afd49",
+        "agent_level": 1,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials ('pi'/'raspberryraspberry993311'), indicating an automated brute-force or dictionary attack. Immediately after login, a file was downloaded via stdin, without any interactive commands, which is characteristic of an automated bot deploying a payload to establish a persistent presence.",
+        "technique_ids": [
+          "T1078.001",
+          "T1059",
+          "T1547",
+          "T1053"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "05d1ea12",
+        "agent_level": 1,
+        "agent_tactic": "Execution",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials ('pi:raspberryraspberry993311') for a Raspberry Pi. Immediately upon login, a script was downloaded via stdin and executed, indicating an automated attempt to establish control and deploy further malicious capabilities without leaving explicit command history. This is a typical automated attack targeting IoT devices with weak credentials.",
+        "technique_ids": [
+          "T1078",
+          "T1059.004",
+          "T1053",
+          "T1082",
+          "T1083",
+          "T1071"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "e748c942",
+        "agent_level": 1,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The session shows a successful SSH login using the default 'pi:raspberry' credentials, indicating a scan for vulnerable IoT devices. Immediately following authentication, a file was uploaded to the honeypot via stdin (likely an SCP/SFTP transfer), which is a common method for delivering malware or tools (T1105 - Ingress Tool Transfer) to establish a foothold and enable further malicious activities. The lack of interactive commands suggests an automated or highly targeted payload delivery, aiming for execution, persistence, and C2.",
+        "technique_ids": [
+          "T1078.003",
+          "T1105"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "49282bc9",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "An attacker successfully authenticated to the honeypot using common default credentials (pi:raspberry). Following authentication, they uploaded a file to the system (logged as a 'download from stdin' by the honeypot, indicating an ingress transfer). No further commands were executed, suggesting an automated script or a quick payload drop without interactive exploration.",
+        "technique_ids": [
+          "T1078.001",
+          "T1105"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "7c6921c0",
+        "agent_level": 1,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default Raspberry Pi credentials ('pi:raspberryraspberry993311'). Immediately after authentication, a file was transferred to the honeypot via 'stdin', indicating a direct payload drop. This is a clear attempt to compromise the system, likely for inclusion in a botnet, despite no explicit commands being logged post-login.",
+        "technique_ids": [
+          "T1078.001",
+          "T1105",
+          "T1547",
+          "T1059",
+          "T1071"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "c0a65fbc",
+        "agent_level": 2,
+        "agent_tactic": "Unknown",
+        "agent_reasoning": "couldn't parse response: ```json\n{\n  \"threat_level\": 2,\n  \"primary_tactic\": \"Initial Access\",\n  \"all_tactics\": [\n    \"Initial...",
+        "technique_ids": [],
+        "commands": []
+      },
+      {
+        "session_id": "dff57a83",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberryraspberry993311) via SSH. Immediately after authentication, a file was uploaded to the honeypot without any commands being executed. This behavior suggests an automated script attempting to gain initial access and drop a payload for potential future execution or persistence.",
+        "technique_ids": [
+          "T1078.001",
+          "T1105"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "6f79ba6d",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry), indicating a credential stuffing or brute-force attack. Immediately after login, a file was 'downloaded from stdin' without any explicit commands being executed. This suggests an automated attempt to pipe a malicious payload directly into the SSH session for execution, likely to establish persistence or further compromise the system.",
+        "technique_ids": [
+          "T1078.001",
+          "T1059"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "8ed208ec",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "Attacker successfully authenticated via SSH using common default credentials (pi:raspberryraspberry993311). Immediately after authentication, a file was delivered via stdin, indicating an attempt to deploy and likely execute a malicious payload. No further commands were observed, suggesting the session was short-lived or the honeypot prevented further interaction.",
+        "technique_ids": [
+          "T1078.001",
+          "T1059"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "2d81f5e8",
+        "agent_level": 1,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The session shows a successful SSH login using default/weak credentials ('pi:raspberryraspberry993311'), indicating a targeted scan for common vulnerabilities. Immediately after authentication, a file was transferred to the honeypot, logged as a 'download' from 'stdin' without any explicit shell commands. This suggests an automated file transfer over the SSH channel (e.g., scp/sftp or direct pipe), delivering a payload (likely malware) as part of the initial compromise.",
+        "technique_ids": [
+          "T1078.003",
+          "T1071"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "d6aa52ea",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using default 'pi:raspberry' credentials, indicating a lack of sophisticated targeting. They then uploaded a file to the honeypot, likely a malicious payload intended for execution, persistence, or further compromise. The absence of further commands suggests either a quick drop-and-disconnect or an automated process.",
+        "technique_ids": [
+          "T1078.001",
+          "T1059"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "45f3d305",
+        "agent_level": 1,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry), indicating a scan for vulnerable IoT devices. Immediately after authentication, a file was downloaded via stdin without any explicit commands, suggesting an automated payload delivery mechanism. This is a high-threat event as it represents a successful compromise and immediate deployment of malicious code.",
+        "technique_ids": [
+          "T1078.001",
+          "T1059"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "a67a404e",
+        "agent_level": 1,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated as 'root' using a likely weak or default password. Immediately after gaining access, they attempted to install 'wget', a common utility used to download additional tools or malware. This indicates an intent to further compromise the system by fetching and executing malicious payloads.",
+        "technique_ids": [
+          "T1078",
+          "T1059.004"
+        ],
+        "commands": [
+          {
+            "timestamp": "2020-05-02 07:35:36.203875+00:00",
+            "input": "yum -y install wget",
+            "success": false
+          }
+        ]
+      },
+      {
+        "session_id": "97fb72c1",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully gained initial access using default or weak credentials (`root:QWE#2019asd`). They immediately attempted to install `wget` to facilitate further tool download and subsequent compromise, indicating a preparatory step for establishing persistence or executing a payload. This appears to be a script-kiddie level attack due to the use of common credentials and a single, basic command.",
+        "technique_ids": [
+          "T1078",
+          "T1059.004"
+        ],
+        "commands": [
+          {
+            "timestamp": "2020-05-02 07:32:36.947950+00:00",
+            "input": "yum -y install wget",
+            "success": false
+          }
+        ]
+      },
+      {
+        "session_id": "ba3a059d",
+        "agent_level": 1,
+        "agent_tactic": "Execution",
+        "agent_reasoning": "The attacker successfully gained root access via SSH using a likely common or brute-forced password. The immediate action was to execute 'yum -y install wget', indicating an intent to download further payloads or tools. This is a common initial step for establishing a foothold and preparing for subsequent stages of attack, such as collection, exfiltration, or impact. The simplicity of the attack (one command, common tool) suggests a low sophistication level, likely an automated script or a script kiddie.",
+        "technique_ids": [
+          "T1078.003",
+          "T1059.004"
+        ],
+        "commands": [
+          {
+            "timestamp": "2020-05-02 21:04:46.077734+00:00",
+            "input": "yum -y install wget",
+            "success": false
+          }
+        ]
+      },
+      {
+        "session_id": "b40eb2f0",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "A successful SSH login with default 'root' credentials is a critical security event, categorized as Initial Access (T1078.001). The subsequent execution of a simple 'while' loop command (T1059.004) suggests a basic test or an automated script. The lack of more complex commands or downloads points to a low-sophistication attacker, likely an automated scanner or script kiddie, but the successful access warrants a medium threat level.",
+        "technique_ids": [
+          "T1078.001",
+          "T1059.004"
+        ],
+        "commands": [
+          {
+            "timestamp": "2020-05-02 22:15:25.378136+00:00",
+            "input": "while [ -d /proc/$PPID ]",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-02 22:15:25.379416+00:00",
+            "input": "do sleep 1",
+            "success": false
+          }
+        ]
+      },
+      {
+        "session_id": "79d44170",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated as 'root' using a likely weak or default password. The immediate action was to install 'wget', a common utility for downloading files, indicating an intent to retrieve further tools or malware. This is a basic, automated or semi-automated first step in a compromise chain.",
+        "technique_ids": [
+          "T1078.004",
+          "T1059.004",
+          "T1105"
+        ],
+        "commands": [
+          {
+            "timestamp": "2020-05-04 19:46:26.743806+00:00",
+            "input": "yum -y install wget",
+            "success": false
+          }
+        ]
+      },
+      {
+        "session_id": "73880c67",
+        "agent_level": 1,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "An attacker successfully authenticated to the honeypot using common default credentials for Raspberry Pi. Immediately after gaining access, they uploaded a file (likely a malicious payload) to the system. No shell commands were explicitly executed, suggesting the attacker either intended to execute the payload in a subsequent session or the file transfer mechanism itself was used to deliver a self-executing or passively-executing payload. This indicates an attempt to compromise the system and establish persistence or further malicious activity.",
+        "technique_ids": [
+          "T1078.001",
+          "T1059"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "ae1dcbfc",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberryraspberry993311), indicating an automated scan. Immediately after login, a file was downloaded (as evidenced by the shasum), suggesting an attempt to drop a payload. The lack of further commands implies a simple, automated script that establishes a foothold and delivers a malicious file.",
+        "technique_ids": [
+          "T1078",
+          "T1059"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "da6b9bb4",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials ('pi:raspberryraspberry993311') often associated with Raspberry Pi devices. Immediately after authentication, they attempted to deliver a payload via stdin, which is a common method to pipe a script for execution. No further commands were observed, suggesting the attacker either expected the payload to execute automatically upon delivery or disconnected after the attempt. This indicates an automated or low-sophistication attempt to compromise the system.",
+        "technique_ids": [
+          "T1078.004",
+          "T1059"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "c60929a3",
+        "agent_level": 1,
+        "agent_tactic": "Execution",
+        "agent_reasoning": "The attacker successfully authenticated using common weak credentials and immediately piped a payload via stdin for execution. This automated approach aims to establish a foothold and execute malicious code while evading command logging, indicating a pre-packaged, automated compromise attempt.",
+        "technique_ids": [
+          "T1078.004",
+          "T1059.004",
+          "T1070"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "094255d9",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials ('pi:raspberryraspberry993311') for Raspberry Pi devices. Following authentication, they uploaded a file (likely a malicious payload) to the honeypot. No further commands were observed, suggesting an automated process or an incomplete attack, but the successful access and payload staging indicate a clear malicious intent.",
+        "technique_ids": [
+          "T1078.004",
+          "T1105"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "39182c45",
+        "agent_level": 2,
+        "agent_tactic": "Discovery",
+        "agent_reasoning": "The attacker successfully authenticated using common 'root:admin' credentials (T1078). The only command executed, '/ip cloud print', is specific to MikroTik RouterOS, indicating a discovery attempt (T1082) to identify the device type. The lack of further commands suggests the attacker either realized it wasn't a MikroTik device or was simply performing reconnaissance.",
+        "technique_ids": [
+          "T1078",
+          "T1082"
+        ],
+        "commands": [
+          {
+            "timestamp": "2020-05-26 13:35:47.147296+00:00",
+            "input": "/ip cloud print",
+            "success": false
+          }
+        ]
+      },
+      {
+        "session_id": "50226540",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberryraspberry993311). Immediately after gaining access, an unknown file was delivered to the system via stdin, indicating an automated attempt to drop a payload without further interactive commands. This is a clear attempt to establish a foothold and prepare for subsequent malicious activities.",
+        "technique_ids": [
+          "T1078.001",
+          "T1059"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "12b8aad9",
+        "agent_level": 1,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberryraspberry993311) via SSH. Immediately after authentication, a file was pushed to the system via stdin, indicating a direct payload delivery. This suggests an automated attempt to compromise the system and establish a foothold.",
+        "technique_ids": [
+          "T1078.004",
+          "T1059"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "eb2a83b5",
+        "agent_level": 1,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully logged in using default 'admin:admin' credentials (T1078.001), indicating a credential stuffing or brute-force attempt. Immediately after gaining access, they executed 'pkill' commands (T1059.004) targeting common botnet process names, suggesting an automated attempt to clear the system of other malware before deploying their own. The short duration and simple commands point to automated, unsophisticated activity.",
+        "technique_ids": [
+          "T1078.001",
+          "T1059.004"
+        ],
+        "commands": [
+          {
+            "timestamp": "2020-05-28 12:00:45.363454+00:00",
+            "input": "pkill storm",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-28 12:00:45.364575+00:00",
+            "input": "pkill x86",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-28 12:00:45.365904+00:00",
+            "input": "pkill 911.x86",
+            "success": false
+          },
+          {
+            "timestamp": "2020-05-28 12:00:45.367504+00:00",
+            "input": "pkill bot.x86",
+            "success": false
+          }
+        ]
+      },
+      {
+        "session_id": "f3066758",
+        "agent_level": 1,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry), achieving initial access. They then transferred a payload to the honeypot via 'stdin' within a short duration, indicating an intent to execute malicious code. The lack of logged commands for the transfer suggests a direct data stream or a method not captured by standard command logging, which is a slightly more tailored approach than simple command execution.",
+        "technique_ids": [
+          "T1078.001",
+          "T1059"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "d68555c9",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials ('pi:raspberryraspberry993311'), indicating an opportunistic attack. Immediately after authentication, a file was downloaded via stdin, likely a malicious payload, without any preceding commands. This suggests a direct push from the attacker's machine to establish a foothold.",
+        "technique_ids": [
+          "T1078.001",
+          "T1105"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "950b2456",
+        "agent_level": 2,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials for Raspberry Pi (pi:raspberryraspberry993311). Immediately after login, a file was uploaded to the system. No commands were executed, suggesting an automated script that stages a payload without immediate execution, or an incomplete attempt. The use of default credentials and the automated nature of the session point to a low-sophistication attacker.",
+        "technique_ids": [
+          "T1078.001",
+          "T1072"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "6d7eb448",
+        "agent_level": 1,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default 'pi:raspberry' credentials, indicating a basic attack. A file was then uploaded via SSH (likely scp/sftp), which is a typical step to stage a malicious payload for execution and persistence. The absence of subsequent commands suggests an automated script or an interrupted manual attempt, characteristic of lower sophistication.",
+        "technique_ids": [
+          "T1078.004",
+          "T1059.004",
+          "T1543.002"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "ff299c29",
+        "agent_level": 1,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials ('pi:raspberryraspberry993311'), indicating a credential stuffing or brute-force attempt targeting IoT devices. Immediately after login, a file was uploaded to the honeypot via stdin (likely SCP/SFTP), suggesting the deployment of a malicious payload. No further commands were executed, implying an automated process focused solely on dropping the payload for later execution or persistence.",
+        "technique_ids": [
+          "T1078.001",
+          "T1105"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "d15f61da",
+        "agent_level": 1,
+        "agent_tactic": "Execution",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials ('pi:raspberryraspberry993311'), indicating a likely automated brute-force or dictionary attack. Immediately after gaining access, a payload was delivered via stdin, which is a common method for automated scripts to drop malicious files. Although no explicit execution commands were logged, the delivery of the payload strongly implies an intent for execution to compromise the system further.",
+        "technique_ids": [
+          "T1078.001",
+          "T1059"
+        ],
+        "commands": []
+      },
+      {
+        "session_id": "f39ac6e0",
+        "agent_level": 1,
+        "agent_tactic": "Initial Access",
+        "agent_reasoning": "The attacker successfully authenticated using common default credentials (pi:raspberry), indicating an automated scan for vulnerable IoT devices. Immediately after login, a file was 'downloaded from stdin' (likely written to disk), suggesting an attempt to deploy a malicious payload for execution and persistence, despite no explicit commands being logged by the honeypot.",
+        "technique_ids": [
+          "T1078.001",
+          "T1059"
+        ],
+        "commands": []
+      }
+    ]
+  }
+}

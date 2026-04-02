@@ -1,0 +1,59 @@
+{
+  "dataset": {
+    "total_sessions": 11711491,
+    "anomalous": 44280,
+    "anomaly_rate": 0.003780902021783563
+  },
+  "rule_based": {
+    "coverage": {
+      "with_patterns": 39027,
+      "no_patterns": 11672464,
+      "pattern_rate": 0.0033323681843754993
+    },
+    "level_distribution": {
+      "1": 3340,
+      "2": 62,
+      "3": 11708089
+    },
+    "cost_usd": 0.0,
+    "speed_estimate_sessions_per_sec": 10000
+  },
+  "agent_pipeline": {
+    "sent_to_hunter": 44280,
+    "hunter_noise": 33115,
+    "hunter_relevant": 7894,
+    "hunter_errored": 3271,
+    "sent_to_analyst": 7894,
+    "hunter_filter_rate": 0.8075056694871857,
+    "level_distribution": {
+      "1": 3381,
+      "2": 3519,
+      "3": 675
+    },
+    "novel_findings": 1486,
+    "novel_finding_rate": 0.18824423612870533
+  },
+  "cost": {
+    "total_cost_usd": 0.0,
+    "hunter_only_cost_usd": 0.0,
+    "analyst_cost_usd": 0.0,
+    "avg_cost_per_anomalous_session": 0.0,
+    "avg_cost_per_hunter_call": 0.0,
+    "avg_cost_per_analyst_call": 0.0,
+    "cost_per_novel_finding": 0.0,
+    "cost_distribution": {}
+  },
+  "latency": {
+    "total_latency_s": 316095.587,
+    "avg_latency_per_session_ms": 7138.563392050587
+  },
+  "projections": {
+    "cost_1m_sessions": 0.0,
+    "time_1m_sessions_hours": 7.5
+  },
+  "h4_cost_per_insight": {
+    "cost_per_novel_finding_usd": 0.0,
+    "threshold_met": true,
+    "description": "H4: Agent cost is acceptable if < $1 per novel finding"
+  }
+}
