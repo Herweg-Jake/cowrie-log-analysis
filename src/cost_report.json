@@ -20,18 +20,18 @@
   },
   "agent_pipeline": {
     "sent_to_hunter": 44280,
-    "hunter_noise": 33115,
-    "hunter_relevant": 7894,
-    "hunter_errored": 3271,
-    "sent_to_analyst": 7894,
-    "hunter_filter_rate": 0.8075056694871857,
+    "hunter_noise": 35447,
+    "hunter_relevant": 8833,
+    "hunter_errored": 0,
+    "sent_to_analyst": 8833,
+    "hunter_filter_rate": 0.8005194218608853,
     "level_distribution": {
-      "1": 3381,
-      "2": 3519,
-      "3": 675
+      "1": 3629,
+      "2": 4065,
+      "3": 820
     },
-    "novel_findings": 1486,
-    "novel_finding_rate": 0.18824423612870533
+    "novel_findings": 1617,
+    "novel_finding_rate": 0.18306351183063513
   },
   "cost": {
     "total_cost_usd": 0.0,
@@ -44,12 +44,12 @@
     "cost_distribution": {}
   },
   "latency": {
-    "total_latency_s": 316095.587,
-    "avg_latency_per_session_ms": 7138.563392050587
+    "total_latency_s": 344446.658,
+    "avg_latency_per_session_ms": 7778.831481481481
   },
   "projections": {
     "cost_1m_sessions": 0.0,
-    "time_1m_sessions_hours": 7.5
+    "time_1m_sessions_hours": 8.2
   },
   "h4_cost_per_insight": {
     "cost_per_novel_finding_usd": 0.0,

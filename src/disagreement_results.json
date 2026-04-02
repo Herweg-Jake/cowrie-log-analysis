@@ -2,122 +2,123 @@
   "summary": {
     "total_sessions": 11711491,
     "anomalous": 44280,
-    "hunter_processed": 41009,
-    "hunter_errored": 3271,
-    "hunter_noise": 33115,
-    "hunter_relevant": 7894,
-    "analyst_processed": 7575,
-    "dual_labeled": 7575
+    "hunter_processed": 44280,
+    "hunter_errored": 0,
+    "hunter_noise": 35447,
+    "hunter_relevant": 8833,
+    "analyst_processed": 8514,
+    "dual_labeled": 8514
   },
   "agreement": {
-    "tactic_agreement_rate": 0.40594059405940597,
-    "tactic_agree": 3075,
-    "tactic_disagree": 4500,
-    "level_agreement_rate": 0.4258745874587459,
-    "level_agree": 3226,
-    "level_disagree": 4349
+    "tactic_agreement_rate": 0.4148461357763683,
+    "tactic_agree": 3532,
+    "tactic_disagree": 4982,
+    "level_agreement_rate": 0.41155743481324875,
+    "level_agree": 3504,
+    "level_disagree": 5010
   },
   "hypotheses": {
-    "H1_tactic_disagreement_rate": 0.594059405940594,
+    "H1_tactic_disagreement_rate": 0.5851538642236317,
     "H2_agent_only_detections": 50,
-    "H2_agent_only_rate": 0.006600660066006601,
-    "H3_hunter_filter_rate": 0.8075056694871857,
+    "H2_agent_only_rate": 0.005872680291284942,
+    "H3_hunter_filter_rate": 0.8005194218608853,
     "H5_sophistication_distribution": {
-      "SCRIPT_KIDDIE": 6620,
-      "INTERMEDIATE": 799,
-      "UNKNOWN": 156
+      "SCRIPT_KIDDIE": 7458,
+      "INTERMEDIATE": 877,
+      "UNKNOWN": 179
     }
   },
   "distributions": {
     "rule_tactic": {
-      "Discovery": 2973,
-      "Command and Control": 2852,
-      "No Action": 949,
-      "Unknown Activity (Low)": 378,
-      "Unknown Activity (High)": 217,
-      "Impact": 71,
-      "Execution": 68,
-      "Persistence": 48,
+      "Discovery": 3615,
+      "Command and Control": 3004,
+      "No Action": 1005,
+      "Unknown Activity (Low)": 398,
+      "Unknown Activity (High)": 276,
+      "Impact": 73,
+      "Execution": 70,
+      "Persistence": 53,
       "Resource Hijacking": 13,
       "Credential Access": 3,
-      "Privilege Escalation": 3
+      "Privilege Escalation": 3,
+      "Defense Evasion": 1
     },
     "agent_tactic": {
-      "Initial Access": 3420,
-      "Discovery": 1953,
-      "Command and Control": 1206,
-      "Execution": 513,
-      "Unknown": 156,
-      "Persistence": 156,
-      "Ingress Tool Transfer": 137,
-      "Impact": 21,
-      "Defense Evasion": 11,
+      "Initial Access": 3805,
+      "Discovery": 2361,
+      "Command and Control": 1261,
+      "Execution": 547,
+      "Persistence": 182,
+      "Unknown": 179,
+      "Ingress Tool Transfer": 141,
+      "Impact": 23,
+      "Defense Evasion": 13,
       "Privilege Escalation": 2
     },
     "rule_level": {
-      "1": 3004,
-      "2": 54,
-      "3": 4517
+      "1": 3161,
+      "2": 59,
+      "3": 5294
     },
     "agent_level": {
-      "1": 3381,
-      "2": 3519,
-      "3": 675
+      "1": 3629,
+      "2": 4065,
+      "3": 820
     },
     "hunter_verdicts": {
-      "NOISE": 33115,
-      "RELEVANT": 7894
+      "NOISE": 35447,
+      "RELEVANT": 8833
     }
   },
   "confusion_matrices": {
     "level": {
       "1": {
-        "1": 2511,
-        "2": 490,
+        "1": 2640,
+        "2": 518,
         "3": 3
       },
       "2": {
-        "1": 11,
-        "2": 43
+        "1": 12,
+        "2": 47
       },
       "3": {
-        "3": 672,
-        "2": 2986,
-        "1": 859
+        "3": 817,
+        "2": 3500,
+        "1": 977
       }
     },
     "tactic": {
       "Command and Control": {
-        "Initial Access": 1098,
-        "Execution": 342,
-        "Ingress Tool Transfer": 137,
-        "Unknown": 71
+        "Initial Access": 1169,
+        "Execution": 358,
+        "Ingress Tool Transfer": 141,
+        "Unknown": 77
       },
       "Discovery": {
-        "Initial Access": 1161,
+        "Initial Access": 1405,
         "Execution": 1,
         "Persistence": 1,
         "Unknown": 1
       },
       "No Action": {
-        "Initial Access": 837,
-        "Execution": 67,
-        "Unknown": 39,
+        "Initial Access": 885,
+        "Execution": 74,
+        "Unknown": 40,
         "Persistence": 4,
         "Command and Control": 1
       },
       "Unknown Activity (Low)": {
-        "Initial Access": 254,
-        "Discovery": 107,
+        "Initial Access": 267,
+        "Discovery": 114,
         "Execution": 10,
         "Impact": 2,
         "Unknown": 2
       },
       "Unknown Activity (High)": {
-        "Persistence": 98,
-        "Unknown": 42,
-        "Initial Access": 38,
-        "Execution": 37,
+        "Persistence": 124,
+        "Unknown": 58,
+        "Execution": 47,
+        "Initial Access": 45,
         "Discovery": 2
       },
       "Impact": {
@@ -128,12 +129,12 @@
         "Command and Control": 1
       },
       "Persistence": {
-        "Discovery": 32,
-        "Defense Evasion": 9,
-        "Initial Access": 7
+        "Discovery": 35,
+        "Defense Evasion": 10,
+        "Initial Access": 8
       },
       "Execution": {
-        "Initial Access": 13,
+        "Initial Access": 14,
         "Impact": 3,
         "Persistence": 1,
         "Discovery": 1,
