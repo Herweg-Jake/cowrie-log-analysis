@@ -108,10 +108,8 @@ Analyze this session."""
     def parse_output(self, response_text: str) -> dict:
         """Extract structured analysis from response."""
         try:
-            # find the JSON blob - it should have threat_level in it
-            match = re.search(r'\{[^{}]*"threat_level"[^{}]*\}', response_text, re.DOTALL)
-            if match:
-                data = json.loads(match.group())
+            data = _extract_json(response_text)
+            if data and "threat_level" in data:
                 return {
                     "threat_level": int(data.get("threat_level", 2)),
                     "primary_tactic": data.get("primary_tactic", "Unknown"),
@@ -138,3 +136,33 @@ Analyze this session."""
             "confidence": 0.0,
             "iocs": [],
         }
+
+
+def _extract_json(text: str) -> dict | None:
+    """Extract a JSON object from text that may be wrapped in markdown fences."""
+    # Strip markdown code fences if present
+    stripped = re.sub(r'^```(?:json)?\s*\n?', '', text.strip())
+    stripped = re.sub(r'\n?```\s*$', '', stripped).strip()
+
+    # Try direct parse first
+    try:
+        return json.loads(stripped)
+    except json.JSONDecodeError:
+        pass
+
+    # Find the outermost { ... } by brace matching
+    start = stripped.find('{')
+    if start == -1:
+        return None
+    depth = 0
+    for i in range(start, len(stripped)):
+        if stripped[i] == '{':
+            depth += 1
+        elif stripped[i] == '}':
+            depth -= 1
+            if depth == 0:
+                try:
+                    return json.loads(stripped[start:i + 1])
+                except json.JSONDecodeError:
+                    return None
+    return None
