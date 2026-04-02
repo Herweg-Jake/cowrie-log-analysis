@@ -34,7 +34,7 @@ class AgentConfig:
     location: str = "us-central1"
 
     # generation params
-    max_tokens: int = 1024
+    max_tokens: int = 4096
     temperature: float = 0.1  # low = consistent, high = creative
 
     # rate limits - 500 RPM gives good throughput with headroom under the 1K API limit
