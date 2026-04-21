@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cowrie Session Annotator</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #161a22;
+    --border: #262b36;
+    --fg: #e6e8ed;
+    --muted: #8b93a1;
+    --accent: #4aa3ff;
+    --danger: #ff6b6b;
+    --ok: #6fde8c;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, sans-serif;
+         background: var(--bg); color: var(--fg); }
+  header { padding: 10px 16px; border-bottom: 1px solid var(--border);
+           display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  header h1 { font-size: 15px; margin: 0; font-weight: 600; }
+  header .progress { font-family: var(--mono); color: var(--muted); font-size: 13px; }
+  header .controls { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  input[type="file"] { color: var(--muted); }
+  input[type="text"], textarea, select {
+    background: #0b0d12; color: var(--fg); border: 1px solid var(--border);
+    border-radius: 4px; padding: 6px 8px; font: inherit;
+  }
+  textarea { font-family: var(--mono); font-size: 13px; width: 100%; }
+  button { background: var(--accent); color: #fff; border: 0; border-radius: 4px;
+           padding: 6px 12px; cursor: pointer; font: inherit; }
+  button.secondary { background: var(--border); color: var(--fg); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  main { display: grid; grid-template-columns: 1fr 360px; gap: 0; height: calc(100vh - 49px); }
+  .session { overflow-y: auto; padding: 16px 24px; border-right: 1px solid var(--border); }
+  .form { overflow-y: auto; padding: 16px 24px; background: var(--panel); }
+  h2 { font-size: 13px; text-transform: uppercase; color: var(--muted);
+       letter-spacing: .08em; margin: 0 0 8px 0; }
+  section { margin-bottom: 18px; }
+  .kv { display: grid; grid-template-columns: 160px 1fr; gap: 4px 12px;
+        font-family: var(--mono); font-size: 13px; }
+  .kv .k { color: var(--muted); }
+  .cmdlist { background: #0b0d12; border: 1px solid var(--border);
+             border-radius: 4px; padding: 10px; font-family: var(--mono);
+             font-size: 12.5px; max-height: 40vh; overflow-y: auto; }
+  .cmdlist .cmd { padding: 2px 0; white-space: pre-wrap; word-break: break-all; }
+  .cmdlist .cmd:nth-child(odd) { background: rgba(255,255,255,0.02); }
+  .cmdlist .idx { color: var(--muted); margin-right: 8px; user-select: none; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 10px;
+          font-size: 12px; background: #222834; color: var(--fg); margin-right: 4px; }
+  .pill.warn { background: #4a3015; color: #ffb566; }
+  .pill.danger { background: #4a1c1c; color: var(--danger); }
+  .pill.ok { background: #1c3a23; color: var(--ok); }
+  .form label { display: block; font-size: 13px; margin: 10px 0 4px;
+                color: var(--muted); }
+  .form select, .form input[type="text"], .form textarea { width: 100%; }
+  .form .row { display: flex; gap: 8px; }
+  .form .row > * { flex: 1; }
+  .checkbox { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .nav { display: flex; gap: 8px; margin-top: 16px; }
+  .nav button { flex: 1; }
+  .status-done { color: var(--ok); }
+  .status-skipped { color: var(--muted); }
+  .status-unseen { color: var(--muted); }
+  .jumpbar { display: flex; gap: 4px; margin-top: 10px; flex-wrap: wrap;
+             max-height: 120px; overflow-y: auto; }
+  .jump { background: var(--border); color: var(--muted); border: 0;
+          border-radius: 3px; padding: 2px 6px; font-family: var(--mono);
+          font-size: 11px; cursor: pointer; }
+  .jump.current { background: var(--accent); color: #fff; }
+  .jump.done { background: #1c3a23; color: var(--ok); }
+  .downloads { font-family: var(--mono); font-size: 12px; }
+  .downloads li { word-break: break-all; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  details { margin-top: 8px; }
+  details summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+  .empty { padding: 60px; text-align: center; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Cowrie Session Annotator</h1>
+  <div class="progress" id="progress">no file loaded</div>
+  <div class="controls">
+    <label style="color: var(--muted); font-size: 13px;">annotator
+      <input type="text" id="annotator" placeholder="your name" style="width: 140px; margin-left: 6px;">
+    </label>
+    <input type="file" id="fileInput" accept=".jsonl,.json">
+    <button id="exportBtn" class="secondary">Export</button>
+    <button id="resetBtn" class="secondary" title="Clear saved annotations for the currently loaded file">Reset</button>
+  </div>
+</header>
+
+<main>
+  <div class="session" id="sessionPane">
+    <div class="empty">Load an <code>annotation_sample_blind.jsonl</code> file to begin.</div>
+  </div>
+  <div class="form" id="formPane" style="display:none;">
+    <section>
+      <label for="tactic">Primary tactic</label>
+      <select id="tactic">
+        <option value="">— choose —</option>
+        <option>Initial Access</option>
+        <option>Execution</option>
+        <option>Persistence</option>
+        <option>Privilege Escalation</option>
+        <option>Defense Evasion</option>
+        <option>Credential Access</option>
+        <option>Discovery</option>
+        <option>Lateral Movement</option>
+        <option>Collection</option>
+        <option>Command and Control</option>
+        <option>Exfiltration</option>
+        <option>Impact</option>
+        <option>Resource Hijacking</option>
+        <option>No Action</option>
+        <option>Unknown</option>
+      </select>
+
+      <div class="row">
+        <div>
+          <label for="level">Threat level</label>
+          <select id="level">
+            <option value="">—</option>
+            <option value="1">1 — High</option>
+            <option value="2">2 — Medium</option>
+            <option value="3">3 — Low</option>
+          </select>
+        </div>
+        <div>
+          <label for="confidence">Confidence</label>
+          <select id="confidence">
+            <option value="">—</option>
+            <option value="5">5 — Certain</option>
+            <option value="4">4 — Confident</option>
+            <option value="3">3 — Reasonable</option>
+            <option value="2">2 — Weak</option>
+            <option value="1">1 — Guessing</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="checkbox">
+        <input type="checkbox" id="falseNeg">
+        <label for="falseNeg" style="margin:0;">False-negative risk (would missing this be dangerous?)</label>
+      </div>
+
+      <label for="notes">Notes</label>
+      <textarea id="notes" rows="5" placeholder="Reasoning, ambiguity, anything notable..."></textarea>
+
+      <div class="nav">
+        <button id="prevBtn" class="secondary">&larr; Prev</button>
+        <button id="skipBtn" class="secondary">Skip</button>
+        <button id="saveBtn">Save &amp; Next &rarr;</button>
+      </div>
+      <div class="hint">Shortcuts: <b>J</b>/<b>K</b> prev/next · <b>S</b> save · <b>Shift+S</b> skip</div>
+
+      <details>
+        <summary>Jump to session</summary>
+        <div id="jumpbar" class="jumpbar"></div>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script>
+/* ---------------- state ---------------- */
+let records = [];
+let currentIdx = 0;
+let fileKey = "";   // localStorage namespace derived from the loaded filename+size
+
+const $ = (sel) => document.querySelector(sel);
+
+/* ---------------- storage ---------------- */
+function storageKey() {
+  return "cowrie_annot::" + fileKey;
+}
+function loadAnnotations() {
+  try {
+    return JSON.parse(localStorage.getItem(storageKey()) || "{}");
+  } catch (e) { return {}; }
+}
+function saveAnnotations(obj) {
+  localStorage.setItem(storageKey(), JSON.stringify(obj));
+}
+
+/* ---------------- file loading ---------------- */
+$("#fileInput").addEventListener("change", async (ev) => {
+  const file = ev.target.files[0];
+  if (!file) return;
+  fileKey = `${file.name}::${file.size}`;
+  const text = await file.text();
+  records = text.split(/\r?\n/).filter(Boolean).map((line, i) => {
+    try { return JSON.parse(line); }
+    catch (e) { console.warn("parse fail on line", i, e); return null; }
+  }).filter(Boolean);
+  currentIdx = 0;
+  const done = loadAnnotations();
+  // Jump to first unannotated record
+  for (let i = 0; i < records.length; i++) {
+    const aid = records[i].annotation_id ?? i;
+    if (!done[aid]) { currentIdx = i; break; }
+  }
+  render();
+});
+
+$("#resetBtn").addEventListener("click", () => {
+  if (!fileKey) return;
+  if (confirm("Clear all saved annotations for the currently loaded file?")) {
+    localStorage.removeItem(storageKey());
+    render();
+  }
+});
+
+$("#exportBtn").addEventListener("click", () => {
+  const annotator = $("#annotator").value.trim() || "unknown";
+  const done = loadAnnotations();
+  const lines = Object.values(done).map(rec => JSON.stringify({
+    annotation_id: rec.annotation_id,
+    annotator,
+    primary_tactic: rec.primary_tactic,
+    threat_level: rec.threat_level,
+    confidence: rec.confidence,
+    is_false_negative_risk: rec.is_false_negative_risk,
+    notes: rec.notes || "",
+    _timestamp: rec._timestamp,
+  }));
+  const blob = new Blob([lines.join("\n") + "\n"], { type: "application/jsonl" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `annotation_results_${annotator}.jsonl`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+/* ---------------- rendering ---------------- */
+function fmtCommands(cmds) {
+  const inputs = Array.isArray(cmds) ? cmds : (cmds?.inputs || []);
+  if (!inputs.length) return `<div class="cmdlist"><em style="color:var(--muted)">(no commands)</em></div>`;
+  return `<div class="cmdlist">` +
+    inputs.map((c, i) =>
+      `<div class="cmd"><span class="idx">${String(i+1).padStart(3, " ")}</span>${escapeHtml(c)}</div>`
+    ).join("") + `</div>`;
+}
+function escapeHtml(s) {
+  return (s ?? "").toString().replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
+  }[c]));
+}
+
+function render() {
+  const done = loadAnnotations();
+  const pane = $("#sessionPane");
+  const form = $("#formPane");
+  if (!records.length) {
+    pane.innerHTML = `<div class="empty">Load an <code>annotation_sample_blind.jsonl</code> file to begin.</div>`;
+    form.style.display = "none";
+    $("#progress").textContent = "no file loaded";
+    return;
+  }
+  form.style.display = "";
+  const r = records[currentIdx];
+  const aid = r.annotation_id ?? currentIdx;
+  const totalDone = Object.keys(done).length;
+  $("#progress").textContent = `${totalDone}/${records.length} complete · viewing #${aid} (${currentIdx+1}/${records.length})`;
+
+  const auth = r.login_attempts || {};
+  const cmds = r.commands || {};
+  const dl = r.downloads || {};
+  const ul = r.uploads || {};
+  const pills = [];
+  pills.push(`<span class="pill">${escapeHtml(r.session_type || "?")}</span>`);
+  pills.push(`<span class="pill">${escapeHtml(r.location || "?")}</span>`);
+  if (r.auth_success) pills.push(`<span class="pill ok">auth ok</span>`);
+  else pills.push(`<span class="pill warn">auth failed</span>`);
+  if (cmds.total_count) pills.push(`<span class="pill">${cmds.total_count} cmds</span>`);
+  if (dl.count) pills.push(`<span class="pill danger">${dl.count} downloads</span>`);
+  if (ul.count) pills.push(`<span class="pill danger">${ul.count} uploads</span>`);
+  if (r.duration_s != null) pills.push(`<span class="pill">${Math.round(r.duration_s)}s</span>`);
+  pills.push(`<span class="pill">bucket: ${escapeHtml(r.bucket || "?")}</span>`);
+
+  pane.innerHTML = `
+    <section>
+      <h2>Session ${escapeHtml(r.session_id || "?")}</h2>
+      <div style="margin-bottom: 10px;">${pills.join("")}</div>
+    </section>
+
+    <section>
+      <h2>Authentication</h2>
+      <div class="kv">
+        <div class="k">final username</div><div>${escapeHtml(auth.final_username || "(none)")}</div>
+        <div class="k">final password</div><div>${escapeHtml(auth.final_password || "(none)")}</div>
+        <div class="k">attempts</div><div>${auth.attempts ?? "—"} (${auth.success_count ?? 0} ok / ${auth.failed_count ?? 0} fail)</div>
+        <div class="k">usernames tried</div><div>${(auth.usernames_tried || []).map(escapeHtml).join(", ") || "—"}</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Commands (${cmds.total_count ?? 0} total, ${cmds.success_count ?? "?"} ok / ${cmds.failed_count ?? "?"} fail)</h2>
+      ${fmtCommands(cmds)}
+    </section>
+
+    ${(dl.count ?? 0) > 0 ? `
+      <section>
+        <h2>Downloads</h2>
+        <ul class="downloads">
+          ${(dl.urls || []).map(u => `<li>${escapeHtml(u)}</li>`).join("")}
+          ${(dl.shasums || []).map(s => `<li><code>sha: ${escapeHtml(s)}</code></li>`).join("")}
+        </ul>
+      </section>
+    ` : ""}
+
+    ${(ul.count ?? 0) > 0 ? `
+      <section>
+        <h2>Uploads</h2>
+        <div>${ul.count} upload(s)</div>
+      </section>
+    ` : ""}
+
+    <section>
+      <h2>Client</h2>
+      <div class="kv">
+        <div class="k">ssh_version</div><div>${escapeHtml(r.ssh_version || "—")}</div>
+        <div class="k">hassh</div><div>${escapeHtml(r.hassh || "—")}</div>
+        <div class="k">duration</div><div>${r.duration_s ?? "—"}s</div>
+        <div class="k">start_ts</div><div>${escapeHtml(r.start_ts || "—")}</div>
+      </div>
+    </section>
+
+    ${r.features ? `
+      <details>
+        <summary>Computed features</summary>
+        <pre style="font-size: 11px; overflow: auto; max-height: 240px;">${escapeHtml(JSON.stringify(r.features, null, 2))}</pre>
+      </details>
+    ` : ""}
+  `;
+
+  // Populate form with existing annotation if any
+  const existing = done[aid];
+  $("#tactic").value = existing?.primary_tactic || "";
+  $("#level").value = existing?.threat_level ? String(existing.threat_level) : "";
+  $("#confidence").value = existing?.confidence ? String(existing.confidence) : "";
+  $("#falseNeg").checked = !!existing?.is_false_negative_risk;
+  $("#notes").value = existing?.notes || "";
+
+  renderJumpbar();
+}
+
+function renderJumpbar() {
+  const done = loadAnnotations();
+  const jb = $("#jumpbar");
+  jb.innerHTML = records.map((r, i) => {
+    const aid = r.annotation_id ?? i;
+    const cls = ["jump"];
+    if (i === currentIdx) cls.push("current");
+    if (done[aid]) cls.push("done");
+    return `<button class="${cls.join(" ")}" data-i="${i}">#${aid}</button>`;
+  }).join("");
+  jb.querySelectorAll(".jump").forEach(btn => {
+    btn.addEventListener("click", () => {
+      currentIdx = parseInt(btn.dataset.i, 10);
+      render();
+    });
+  });
+}
+
+/* ---------------- save / nav ---------------- */
+function saveCurrent() {
+  const r = records[currentIdx];
+  if (!r) return false;
+  const aid = r.annotation_id ?? currentIdx;
+  const tactic = $("#tactic").value;
+  const level = $("#level").value;
+  const conf = $("#confidence").value;
+  if (!tactic || !level || !conf) {
+    alert("Tactic, level, and confidence are all required.");
+    return false;
+  }
+  const done = loadAnnotations();
+  done[aid] = {
+    annotation_id: aid,
+    primary_tactic: tactic,
+    threat_level: parseInt(level, 10),
+    confidence: parseInt(conf, 10),
+    is_false_negative_risk: $("#falseNeg").checked,
+    notes: $("#notes").value,
+    _timestamp: new Date().toISOString(),
+  };
+  saveAnnotations(done);
+  return true;
+}
+
+$("#saveBtn").addEventListener("click", () => {
+  if (!saveCurrent()) return;
+  next();
+});
+$("#skipBtn").addEventListener("click", () => next());
+$("#prevBtn").addEventListener("click", () => prev());
+
+function next() {
+  if (currentIdx < records.length - 1) currentIdx += 1;
+  render();
+}
+function prev() {
+  if (currentIdx > 0) currentIdx -= 1;
+  render();
+}
+
+/* keyboard */
+document.addEventListener("keydown", (e) => {
+  if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)) return;
+  if (e.key === "j") prev();
+  else if (e.key === "k") next();
+  else if (e.key === "s" && !e.shiftKey) { if (saveCurrent()) next(); }
+  else if (e.key === "S" || (e.key === "s" && e.shiftKey)) next();
+});
+</script>
+</body>
+</html>
