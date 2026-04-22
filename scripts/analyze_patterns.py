@@ -104,8 +104,7 @@ def _blank_profile() -> dict:
 def _update_profile(profile: dict, d: dict, av: dict, lr: dict, max_samples: int = 10):
     profile["count"] += 1
 
-    meta = d.get("meta", {})
-    profile["session_type"][meta.get("session_type", "unknown")] += 1
+    profile["session_type"][d.get("session_type", "unknown")] += 1
 
     cmds_block = d.get("commands") or {}
     # commands can be either a list (old format) or a dict with total_count/inputs (new format)
@@ -128,18 +127,14 @@ def _update_profile(profile: dict, d: dict, av: dict, lr: dict, max_samples: int
     profile["rule_sophistication_score"][str(lr.get("sophistication_score"))] += 1
     profile["location"][d.get("location", "unknown")] += 1
 
-    auth = d.get("authentication") or {}
-    profile["auth_success"][str(bool(auth.get("success")))] += 1
+    profile["auth_success"][str(bool(d.get("auth_success")))] += 1
 
-    dl = d.get("downloads") or {}
-    ul = d.get("uploads") or {}
-    if isinstance(dl, dict) and dl.get("count"):
+    if len(d.get("downloads", [])):
         profile["has_download"] += 1
-    if isinstance(ul, dict) and ul.get("count"):
+    if len(d.get("uploads", [])):
         profile["has_upload"] += 1
 
-    timing = d.get("timing") or {}
-    dur = timing.get("duration_s")
+    dur = d.get("duration_s")
     if isinstance(dur, (int, float)):
         profile["_duration_sum"] += dur
         profile["_duration_n"] += 1
