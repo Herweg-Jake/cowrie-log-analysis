@@ -161,28 +161,25 @@ def _extract_common_fields(d: dict) -> dict:
         cmd_success = None
         cmd_failed = None
 
-    dl = d.get("downloads") or {}
-    ul = d.get("uploads") or {}
-    auth = d.get("authentication") or {}
+    dl = d.get("downloads") or []
+    ul = d.get("uploads") or []
     client = d.get("client") or {}
-    timing = d.get("timing") or {}
-    meta = d.get("meta") or {}
 
     return {
         "session_id": d.get("session_id"),
         "location": d.get("location"),
-        "session_type": meta.get("session_type"),
-        "duration_s": timing.get("duration_s"),
-        "start_ts": timing.get("start_ts"),
-        "end_ts": timing.get("end_ts"),
-        "auth_success": auth.get("success"),
+        "session_type": d.get("session_type"),
+        "duration_s": d.get("duration_s"),
+        "start_ts": d.get("start_ts"),
+        "end_ts": d.get("end_ts"),
+        "auth_success": d.get("auth_success"),
         "login_attempts": {
-            "attempts": auth.get("attempts"),
-            "failed_count": auth.get("failed_count"),
-            "success_count": auth.get("success_count"),
-            "final_username": auth.get("final_username"),
-            "final_password": auth.get("final_password"),
-            "usernames_tried": auth.get("usernames_tried", [])[:20],
+            "attempts": len(d.get("login_attempts", [])),
+            "failed_count": sum(1 for la in d.get("login_attempts", []) if not la.get("success")),
+            "success_count": sum(1 for la in d.get("login_attempts", []) if la.get("success")),
+            "final_username": d.get("final_username"),
+            "final_password": d.get("final_password"),
+            "usernames_tried": list({la.get("username") for la in d.get("login_attempts", []) if la.get("username")})[:20],
         },
         "ssh_version": client.get("ssh_version"),
         "hassh": client.get("hassh"),
