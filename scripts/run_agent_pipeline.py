@@ -65,10 +65,22 @@ from cowrie_dataset.anomaly.statistical_detector import (
 from cowrie_dataset.agents import AgentConfig, AgentRunner
 
 
-def process_session(runner, session):
+def process_session(runner, session, variant_name=None):
     """Process a single session through the pipeline. Runs in a worker thread."""
     result = runner.process(session)
     session["labels_agentic"] = result.to_dict()
+    if variant_name:
+        # Sidecar block in the schema the metrics framework expects. Keeps
+        # labels_agentic untouched for back-compat with the original B-Flash output.
+        analyst = (session["labels_agentic"].get("analyst_verdict") or {}) if session["labels_agentic"] else {}
+        if analyst:
+            session[f"label_{variant_name}"] = {
+                "primary_tactic": analyst.get("primary_tactic", "Unknown"),
+                "threat_level": analyst.get("level"),
+                "confidence": analyst.get("confidence"),
+                "reasoning": analyst.get("reasoning", ""),
+                "is_anomaly": session["labels_agentic"].get("was_anomaly", False),
+            }
     return session, result
 
 
@@ -78,7 +90,14 @@ def main():
     parser.add_argument("--output", "-o", required=True, help="Output JSONL file")
     parser.add_argument("--anomaly-stats", help="Pre-trained anomaly detector stats")
     parser.add_argument("--z-threshold", type=float, default=3.0)
+    parser.add_argument("--provider", default=None,
+                        choices=["gemini", "vertex", "anthropic", "openai", "ollama"],
+                        help="LLM provider; defaults to whatever AgentConfig picks")
     parser.add_argument("--model", default=None, help="Override model (defaults to AgentConfig default)")
+    parser.add_argument("--variant-name", default=None,
+                        help="Tag written into the cost log so multiple runs are distinguishable")
+    parser.add_argument("--cost-log", default=None,
+                        help="Append per-session cost/latency records here as JSONL")
     parser.add_argument("--dry-run", action="store_true", help="Skip API calls")
     parser.add_argument("--limit", type=int, help="Limit number of sessions")
     parser.add_argument("--concurrency", type=int, default=50,
@@ -86,6 +105,7 @@ def main():
     parser.add_argument("--skip-non-anomalous", action="store_true", default=True,
                         help="Only process sessions flagged as statistical anomalies")
     args = parser.parse_args()
+    cost_log_lock = threading.Lock()
 
     # Load or create anomaly detector
     if args.anomaly_stats:
@@ -100,9 +120,15 @@ def main():
         print("DRY RUN - no API calls will be made")
         runner = None
     else:
-        config = AgentConfig(**({"model": args.model} if args.model else {}))
+        cfg_kwargs = {}
+        if args.model:
+            cfg_kwargs["model"] = args.model
+        if args.provider:
+            # The AgentConfig switch uses 'gemini' for both Vertex and AI Studio.
+            cfg_kwargs["provider"] = "gemini" if args.provider == "vertex" else args.provider
+        config = AgentConfig(**cfg_kwargs)
         runner = AgentRunner(config=config, skip_non_anomalous=args.skip_non_anomalous)
-        print(f"Using {config.model} with {config.requests_per_minute} RPM limit, "
+        print(f"Using {config.provider}/{config.model} with {config.requests_per_minute} RPM limit, "
               f"{args.concurrency} concurrent workers")
 
     # Count input lines
@@ -160,6 +186,24 @@ def main():
             # Concurrent processing - fire off API calls in parallel
             pending = set()
 
+            def _log_cost(session_id, stage, resp):
+                if not args.cost_log or resp is None:
+                    return
+                rec = {
+                    "session_id": session_id,
+                    "variant": args.variant_name or config.model,
+                    "stage": stage,
+                    "model": resp.model,
+                    "input_tokens": resp.input_tokens,
+                    "output_tokens": resp.output_tokens,
+                    "latency_ms": resp.latency_ms,
+                    "cost_usd": round(resp.estimated_cost, 6),
+                    "success": resp.success,
+                }
+                with cost_log_lock:
+                    with open(args.cost_log, "a") as cf:
+                        cf.write(json.dumps(rec) + "\n")
+
             def handle_result(future):
                 """Write result and update counters when a future completes."""
                 nonlocal processed, relevant_count
@@ -169,6 +213,8 @@ def main():
                         f_out.write(json.dumps(session_out) + '\n')
                     if result.hunter_verdict == "RELEVANT":
                         relevant_count += 1
+                    _log_cost(result.session_id, "hunter", result.hunter_response)
+                    _log_cost(result.session_id, "analyst", result.analyst_response)
                     processed += 1
                 except Exception as e:
                     processed += 1
@@ -195,7 +241,7 @@ def main():
                     if session.get("statistical_anomaly", {}).get("is_anomaly", False):
                         anomalous_count += 1
 
-                    future = executor.submit(process_session, runner, session)
+                    future = executor.submit(process_session, runner, session, args.variant_name)
                     pending.add(future)
 
                     # drain completed futures to keep memory bounded

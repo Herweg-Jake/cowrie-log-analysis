@@ -1,0 +1,10 @@
+[
+  {"name": "A",        "predictions": "src/labeled_sessions.jsonl", "pipeline_name": "rule"},
+  {"name": "B-Flash",  "predictions": "src/labeled_sessions.jsonl", "pipeline_name": "agent", "cost_log": "analysis/cost_logs/b_flash.jsonl"},
+  {"name": "B-Pro",    "predictions": "src/labels_b_pro.jsonl",     "pipeline_name": "agent", "cost_log": "analysis/cost_logs/b_pro.jsonl"},
+  {"name": "B-Sonnet", "predictions": "src/labels_b_sonnet.jsonl",  "pipeline_name": "agent", "cost_log": "analysis/cost_logs/b_sonnet.jsonl"},
+  {"name": "B-Opus",   "predictions": "src/labels_b_opus.jsonl",    "pipeline_name": "agent", "cost_log": "analysis/cost_logs/b_opus.jsonl"},
+  {"name": "B-Local",  "predictions": "src/labels_b_local.jsonl",   "pipeline_name": "agent", "cost_log": "analysis/cost_logs/b_local.jsonl"},
+  {"name": "C-Claude", "predictions": "src/labels_pipeline_c_claude.jsonl", "pipeline_name": "ml_claude"},
+  {"name": "Ensemble", "predictions": "src/labels_ensemble.jsonl",  "pipeline_name": "ensemble"}
+]

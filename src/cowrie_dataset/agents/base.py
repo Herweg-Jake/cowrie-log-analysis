@@ -164,6 +164,9 @@ class BaseAgent(ABC):
         elif self.config.provider == "openai":
             import openai
             self._client = openai.OpenAI(api_key=self.config.api_key)
+        elif self.config.provider == "ollama":
+            # Ollama uses plain HTTP, so the "client" is just the base URL.
+            self._client = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
         else:  # gemini - using new google-genai SDK
             from google import genai
 
@@ -263,6 +266,33 @@ class BaseAgent(ABC):
                 response.choices[0].message.content,
                 response.usage.prompt_tokens,
                 response.usage.completion_tokens,
+            )
+
+        elif self.config.provider == "ollama":
+            import json as _json
+            import urllib.request
+            base_url = client
+            body = _json.dumps({
+                "model": self.config.model,
+                "system": self.system_prompt,
+                "prompt": user_prompt,
+                "stream": False,
+                "options": {
+                    "temperature": self.config.temperature,
+                    "num_predict": self.config.max_tokens,
+                },
+            }).encode()
+            req = urllib.request.Request(
+                f"{base_url}/api/generate",
+                data=body,
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req, timeout=300) as r:
+                data = _json.loads(r.read())
+            return (
+                data.get("response", ""),
+                int(data.get("prompt_eval_count", 0) or 0),
+                int(data.get("eval_count", 0) or 0),
             )
 
         else:  # gemini - new SDK style

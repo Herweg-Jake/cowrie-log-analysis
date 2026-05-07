@@ -160,6 +160,30 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == "evaluate":
         from .eval.cli import run as run_evaluate
         return run_evaluate(sys.argv[2:])
+    if len(sys.argv) > 1 and sys.argv[1] == "train_ml":
+        from .ml.train import cli as run_train_ml
+        return run_train_ml(sys.argv[2:])
+    if len(sys.argv) > 1 and sys.argv[1] == "predict_ml":
+        from .ml.predict import cli as run_predict_ml
+        return run_predict_ml(sys.argv[2:])
+    if len(sys.argv) > 1 and sys.argv[1] == "ml_importance":
+        from .ml.importance import cli as run_importance
+        return run_importance(sys.argv[2:])
+    if len(sys.argv) > 1 and sys.argv[1] == "headline":
+        from .eval.headline import cli as run_headline
+        return run_headline(sys.argv[2:])
+    if len(sys.argv) > 1 and sys.argv[1] == "figures":
+        from .eval.figures import cli as run_figures
+        return run_figures(sys.argv[2:])
+    if len(sys.argv) > 1 and sys.argv[1] == "pairwise_mcnemar":
+        from .eval.pairwise import cli as run_pairwise
+        return run_pairwise(sys.argv[2:])
+    if len(sys.argv) > 1 and sys.argv[1] == "ensemble":
+        from .eval.ensemble import cli as run_ensemble
+        return run_ensemble(sys.argv[2:])
+    if len(sys.argv) > 1 and sys.argv[1] == "taxonomy":
+        from .eval.taxonomy import cli as run_taxonomy
+        return run_taxonomy(sys.argv[2:])
 
     parser = argparse.ArgumentParser(
         description="Process Cowrie honeypot logs into ML-ready datasets",
