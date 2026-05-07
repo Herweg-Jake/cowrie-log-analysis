@@ -155,6 +155,12 @@ def build_session_document(
 
 def main():
     """Main entry point for the CLI."""
+    # Subcommand dispatch is intentionally lightweight - the ingest path
+    # below predates subcommands and we don't want to disturb it.
+    if len(sys.argv) > 1 and sys.argv[1] == "evaluate":
+        from .eval.cli import run as run_evaluate
+        return run_evaluate(sys.argv[2:])
+
     parser = argparse.ArgumentParser(
         description="Process Cowrie honeypot logs into ML-ready datasets",
         formatter_class=argparse.RawDescriptionHelpFormatter,
